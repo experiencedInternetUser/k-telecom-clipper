@@ -1,3 +1,4 @@
+// src/types/Admin.ts
 export interface Stream {
   id: string;
   address: string;
@@ -6,14 +7,13 @@ export interface Stream {
   userCount: number;
   isOnline: boolean;
   lastActive?: string;
-  assignedUsers?: string[]; // добавлено — список id пользователей, у которых доступ к потоку
+  assignedUsers?: string[]; // ids пользователей
 }
 
 export interface User {
   id: string;
   login: string;
-  password?: string; // Добавляем поле пароля
-  email: string;
+  password?: string; // опционально
   registrationDate: string;
   lastLogin: string;
   streamCount: number;
@@ -30,7 +30,7 @@ export interface NewStreamForm {
 export interface UserForm {
   login: string;
   password: string;
-  email: string;
+  // email убран
 }
 
 export interface DeleteModalState {

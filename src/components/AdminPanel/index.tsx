@@ -38,32 +38,32 @@ const mockStreams: Stream[] = [
 ];
 
 const mockUsers: User[] = [
-  { id: 'u1', login: 'ivan', email: 'ivan@example.com', registrationDate: '2023-01-01', lastLogin: '2023-11-21', streamCount: 3, isActive: true, assignedStreams: ['s1','s3','s12'] },
-  { id: 'u2', login: 'olga', email: 'olga@example.com', registrationDate: '2023-02-12', lastLogin: '2023-11-20', streamCount: 1, isActive: true, assignedStreams: ['s1'] },
-  { id: 'u3', login: 'petr', email: 'petr@example.com', registrationDate: '2023-03-05', lastLogin: '2023-11-19', streamCount: 1, isActive: true, assignedStreams: ['s6'] },
-
-  // +20 дополнительных (u4..u23)
-  { id: 'u4', login: 'anna', email: 'anna@example.com', registrationDate: '2023-04-01', lastLogin: '2023-11-19', streamCount: 1, isActive: true, assignedStreams: ['s8'] },
-  { id: 'u5', login: 'oleg', email: 'oleg@example.com', registrationDate: '2023-05-02', lastLogin: '2023-11-18', streamCount: 1, isActive: true, assignedStreams: ['s8'] },
-  { id: 'u6', login: 'maria', email: 'maria@example.com', registrationDate: '2023-05-10', lastLogin: '2023-11-17', streamCount: 1, isActive: true, assignedStreams: ['s8'] },
-  { id: 'u7', login: 'sergey', email: 'sergey@example.com', registrationDate: '2023-06-03', lastLogin: '2023-11-16', streamCount: 1, isActive: true, assignedStreams: ['s10'] },
-  { id: 'u8', login: 'elena', email: 'elena@example.com', registrationDate: '2023-06-21', lastLogin: '2023-11-15', streamCount: 1, isActive: true, assignedStreams: ['s12'] },
-  { id: 'u9', login: 'nikita', email: 'nikita@example.com', registrationDate: '2023-07-01', lastLogin: '2023-11-14', streamCount: 1, isActive: true, assignedStreams: ['s12'] },
-  { id: 'u10', login: 'dmitry', email: 'dmitry@example.com', registrationDate: '2023-07-11', lastLogin: '2023-11-13', streamCount: 1, isActive: true, assignedStreams: ['s15'] },
-  { id: 'u11', login: 'sveta', email: 'sveta@example.com', registrationDate: '2023-07-21', lastLogin: '2023-11-12', streamCount: 1, isActive: true, assignedStreams: ['s17'] },
-  { id: 'u12', login: 'andrey', email: 'andrey@example.com', registrationDate: '2023-08-01', lastLogin: '2023-11-11', streamCount: 1, isActive: true, assignedStreams: ['s17'] },
-  { id: 'u13', login: 'irina', email: 'irina@example.com', registrationDate: '2023-08-14', lastLogin: '2023-11-10', streamCount: 1, isActive: true, assignedStreams: ['s19'] },
-  { id: 'u14', login: 'max', email: 'max@example.com', registrationDate: '2023-09-01', lastLogin: '2023-11-09', streamCount: 1, isActive: true, assignedStreams: ['s23'] },
-  { id: 'u15', login: 'katya', email: 'katya@example.com', registrationDate: '2023-09-11', lastLogin: '2023-11-08', streamCount: 0, isActive: true, assignedStreams: [] },
-  { id: 'u16', login: 'vlad', email: 'vlad@example.com', registrationDate: '2023-09-18', lastLogin: '2023-11-07', streamCount: 0, isActive: true, assignedStreams: [] },
-  { id: 'u17', login: 'yulia', email: 'yulia@example.com', registrationDate: '2023-10-02', lastLogin: '2023-11-06', streamCount: 0, isActive: true, assignedStreams: [] },
-  { id: 'u18', login: 'roman', email: 'roman@example.com', registrationDate: '2023-10-10', lastLogin: '2023-11-05', streamCount: 0, isActive: true, assignedStreams: [] },
-  { id: 'u19', login: 'lena', email: 'lena@example.com', registrationDate: '2023-10-21', lastLogin: '2023-11-04', streamCount: 0, isActive: true, assignedStreams: [] },
-  { id: 'u20', login: 'igor', email: 'igor@example.com', registrationDate: '2023-11-01', lastLogin: '2023-11-03', streamCount: 0, isActive: true, assignedStreams: [] },
-  { id: 'u21', login: 'zoya', email: 'zoya@example.com', registrationDate: '2023-11-11', lastLogin: '2023-11-02', streamCount: 0, isActive: true, assignedStreams: [] },
-  { id: 'u22', login: 'kostya', email: 'kostya@example.com', registrationDate: '2023-11-15', lastLogin: '2023-11-01', streamCount: 0, isActive: true, assignedStreams: [] },
-  { id: 'u23', login: 'nastya', email: 'nastya@example.com', registrationDate: '2023-11-18', lastLogin: '2023-10-31', streamCount: 0, isActive: true, assignedStreams: [] },
+  { id: 'u1', login: 'ivan', registrationDate: '2023-01-01', lastLogin: '2023-11-21', streamCount: 3, isActive: true, assignedStreams: ['s1','s3','s12'] },
+  { id: 'u2', login: 'olga', registrationDate: '2023-02-12', lastLogin: '2023-11-20', streamCount: 1, isActive: true, assignedStreams: ['s1'] },
+  { id: 'u3', login: 'petr', registrationDate: '2023-03-05', lastLogin: '2023-11-19', streamCount: 1, isActive: true, assignedStreams: ['s6'] },
+  { id: 'u4', login: 'anna', registrationDate: '2023-04-01', lastLogin: '2023-11-19', streamCount: 1, isActive: true, assignedStreams: ['s8'] },
+  { id: 'u5', login: 'oleg', registrationDate: '2023-05-02', lastLogin: '2023-11-18', streamCount: 1, isActive: true, assignedStreams: ['s8'] },
+  { id: 'u6', login: 'maria', registrationDate: '2023-05-10', lastLogin: '2023-11-17', streamCount: 1, isActive: true, assignedStreams: ['s8'] },
+  { id: 'u7', login: 'sergey', registrationDate: '2023-06-03', lastLogin: '2023-11-16', streamCount: 1, isActive: true, assignedStreams: ['s10'] },
+  { id: 'u8', login: 'elena', registrationDate: '2023-06-21', lastLogin: '2023-11-15', streamCount: 1, isActive: true, assignedStreams: ['s12'] },
+  { id: 'u9', login: 'nikita', registrationDate: '2023-07-01', lastLogin: '2023-11-14', streamCount: 1, isActive: true, assignedStreams: ['s12'] },
+  { id: 'u10', login: 'dmitry', registrationDate: '2023-07-11', lastLogin: '2023-11-13', streamCount: 1, isActive: true, assignedStreams: ['s15'] },
+  { id: 'u11', login: 'sveta', registrationDate: '2023-07-21', lastLogin: '2023-11-12', streamCount: 1, isActive: true, assignedStreams: ['s17'] },
+  { id: 'u12', login: 'andrey', registrationDate: '2023-08-01', lastLogin: '2023-11-11', streamCount: 1, isActive: true, assignedStreams: ['s17'] },
+  { id: 'u13', login: 'irina', registrationDate: '2023-08-14', lastLogin: '2023-11-10', streamCount: 1, isActive: true, assignedStreams: ['s19'] },
+  { id: 'u14', login: 'max', registrationDate: '2023-09-01', lastLogin: '2023-11-09', streamCount: 1, isActive: true, assignedStreams: ['s23'] },
+  { id: 'u15', login: 'katya', registrationDate: '2023-09-11', lastLogin: '2023-11-08', streamCount: 0, isActive: true, assignedStreams: [] },
+  { id: 'u16', login: 'vlad', registrationDate: '2023-09-18', lastLogin: '2023-11-07', streamCount: 0, isActive: true, assignedStreams: [] },
+  { id: 'u17', login: 'yulia', registrationDate: '2023-10-02', lastLogin: '2023-11-06', streamCount: 0, isActive: true, assignedStreams: [] },
+  { id: 'u18', login: 'roman', registrationDate: '2023-10-10', lastLogin: '2023-11-05', streamCount: 0, isActive: true, assignedStreams: [] },
+  { id: 'u19', login: 'lena', registrationDate: '2023-10-21', lastLogin: '2023-11-04', streamCount: 0, isActive: true, assignedStreams: [] },
+  { id: 'u20', login: 'igor', registrationDate: '2023-11-01', lastLogin: '2023-11-03', streamCount: 0, isActive: true, assignedStreams: [] },
+  { id: 'u21', login: 'zoya', registrationDate: '2023-11-11', lastLogin: '2023-11-02', streamCount: 0, isActive: true, assignedStreams: [] },
+  { id: 'u22', login: 'kostya', registrationDate: '2023-11-15', lastLogin: '2023-11-01', streamCount: 0, isActive: true, assignedStreams: [] },
+  { id: 'u23', login: 'nastya', registrationDate: '2023-11-18', lastLogin: '2023-10-31', streamCount: 0, isActive: true, assignedStreams: [] },
 ];
+
+
 const ITEMS_PER_PAGE = 10;
 
 type DeleteTarget = {

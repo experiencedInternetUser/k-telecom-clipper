@@ -1,11 +1,13 @@
-.overlay { position: fixed; inset: 0; display:flex; align-items:center; justify-content:center; background: rgba(2,6,23,0.18); z-index:1500; padding:12px; }
-.modal { width:100%; max-width:520px; background:#fff; border-radius:10px; padding:18px; box-shadow:0 12px 40px rgba(2,6,23,0.12); }
-.header { display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; }
-.title { margin:0; color:#020617; font-weight:700; }
-.close { background:none; border:none; cursor:pointer; color:#6b7280; font-size:1.05rem; }
-.form { display:flex; flex-direction:column; gap:10px; }
-.form label { font-weight:600; color:#111827; }
-.form input { padding:10px 12px; border-radius:8px; border:1px solid #E6E9EE; }
-.actions { display:flex; justify-content:flex-end; gap:10px; margin-top:8px; }
-.cancelBtn { background:#fff; border:1px solid #E6E9EE; padding:8px 12px; border-radius:8px; color:#6b7280; font-weight:700; }
-.submitBtn { background:#C8235A; border:none; padding:8px 12px; border-radius:8px; color:#fff; font-weight:700; }
+/* src/components/AdminPanel/UserModal.module.css */
+.modalOverlay { position: fixed; inset: 0; display:flex; align-items:center; justify-content:center; background: rgba(0,0,0,0.45); z-index:1000; padding:16px; }
+.modal { background:#fff; border-radius:12px; width:100%; max-width:520px; overflow:auto; }
+.modalHeader { display:flex; justify-content:space-between; align-items:center; padding:16px 20px; border-bottom:1px solid #EDEFF2; }
+.modalForm { padding:18px 20px; }
+.formGroup { margin-bottom:14px; }
+.formGroup label { display:block; margin-bottom:8px; font-weight:700; color:#111827; }
+.formGroup input { width:100%; padding:10px 12px; border:1px solid #E6EEF6; border-radius:8px; }
+.passwordHint { font-size:12px; color:#64748B; margin-top:6px; }
+.modalActions { display:flex; gap:12px; justify-content:flex-end; padding-top:8px; border-top:1px solid #EDEFF2; margin-top:12px; }
+.cancelButton { background:#F1F5F9; color:#000; padding:8px 12px; border-radius:8px; border:none; }
+.submitButton { background:#C8235A; color:#fff; padding:8px 14px; border-radius:8px; border:none; }
+.closeButton { background:none; border:none; font-size:20px; cursor:pointer; }

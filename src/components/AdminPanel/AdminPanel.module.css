@@ -126,3 +126,48 @@
 .pageNumber { background: transparent; border: 1px solid transparent; padding:8px 10px; border-radius:6px; cursor:pointer; }
 .activePage { border: 1px solid #C8235A; }
 .pageNumber:hover { background: #f8fafc; }
+
+
+:root {
+  /* можно подправить под дизайн: минимальная высота панели (в px) */
+  --panel-min-height: 640px;
+}
+
+/* общий контейнер */
+.container {
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 24px;
+  background: white;
+  border-radius: 12px;
+  border: 1px solid #E2E8F0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* ... (остальные правила остаются как раньше) ... */
+
+/* Контент панели: фиксируем высоту, чтобы вкладки имели одинаковый размер */
+.panelContent {
+  margin-top: 12px;
+  min-height: var(--panel-min-height);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* чтобы внутренние табы могли растягиваться по высоте */
+.panelContent > * {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+}
+
+/* пагинация - оставляем снизу */
+.paginationContainer {
+  margin-top: auto;
+  display: flex;
+  justify-content: center;
+}

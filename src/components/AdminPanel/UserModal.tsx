@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import styles from './UserModal.module.css';
 import type { User, UserForm } from '../../types/Admin';
 
@@ -8,57 +8,40 @@ interface Props {
   onSubmit: (payload: UserForm) => void;
 }
 
-const UserModal: React.FC<Props> = ({ user, onClose, onSubmit }) => {
-  const [form, setForm] = useState<UserForm>({
-    login: '',
-    password: ''
-  });
+const UserModal: React.FC<Props> = ({ user = null, onClose, onSubmit }) => {
+  const [login, setLogin] = useState(user?.login ?? '');
+  const [email, setEmail] = useState(user?.email ?? '');
+  const [password, setPassword] = useState('');
+  const inputRef = useRef<HTMLInputElement | null>(null);
 
-  useEffect(() => {
-    if (user) {
-      setForm({
-        login: user.login,
-        password: user.password ?? ''
-      });
-    } else {
-      setForm({ login: '', password: '' });
-    }
-  }, [user]);
+  useEffect(() => { inputRef.current?.focus(); }, []);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setForm(prev => ({ ...prev, [name]: value }));
-  };
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!form.login.trim()) return;
-    onSubmit(form);
+  const handleSubmit = (e?: React.FormEvent) => {
+    e?.preventDefault();
+    onSubmit({ login: login.trim(), password, email: email.trim() });
   };
 
   return (
-    <div className={styles.modalOverlay}>
+    <div className={styles.overlay}>
       <div className={styles.modal}>
-        <div className={styles.modalHeader}>
-          <h2>{user ? 'Редактировать пользователя' : 'Создать пользователя'}</h2>
-          <button className={styles.closeButton} onClick={onClose} aria-label="Закрыть">×</button>
+        <div className={styles.header}>
+          <h3 className={styles.title}>{user ? 'Изменить пользователя' : 'Создать пользователя'}</h3>
+          <button className={styles.close} onClick={onClose}>✕</button>
         </div>
 
-        <form className={styles.modalForm} onSubmit={handleSubmit}>
-          <div className={styles.formGroup}>
-            <label>Логин</label>
-            <input name="login" value={form.login} onChange={handleChange} required />
-          </div>
+        <form className={styles.form} onSubmit={handleSubmit}>
+          <label>Логин</label>
+          <input ref={inputRef} value={login} onChange={e => setLogin(e.target.value)} required />
 
-          <div className={styles.formGroup}>
-            <label>Пароль</label>
-            <input name="password" value={form.password} onChange={handleChange} type="password" />
-            {/* подсказка удалена */}
-          </div>
+          <label>Email</label>
+          <input value={email} onChange={e => setEmail(e.target.value)} />
 
-          <div className={styles.modalActions}>
-            <button type="button" className={styles.cancelButton} onClick={onClose}>Отмена</button>
-            <button type="submit" className={styles.submitButton}>Сохранить</button>
+          <label>Пароль</label>
+          <input type="password" value={password} onChange={e => setPassword(e.target.value)} />
+
+          <div className={styles.actions}>
+            <button type="button" className={styles.cancelBtn} onClick={onClose}>Отмена</button>
+            <button type="submit" className={styles.submitBtn}>{user ? 'Сохранить' : 'Создать'}</button>
           </div>
         </form>
       </div>

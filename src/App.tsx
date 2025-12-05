@@ -1,13 +1,11 @@
-// src/App.tsx
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import LoginForm from './components/LoginForm/LoginForm';
 import DomofonList from './components/DomofonList/DomofonList';
 import VideoStreamPage from './components/VideoStreamPage/VideoStreamPage';
-import AdminPanel from './components/AdminPanel'; // импорт из index.tsx в папке AdminPanel
+import AdminPanel from './components/AdminPanel';
 import './App.css';
-import logo from './assets/logo.png'; // убедись, что файл существует
+import logo from './assets/logo.png';
 
-// ProtectedRoute
 const ProtectedRoute = ({ children, adminOnly = false }: { children: JSX.Element, adminOnly?: boolean }) => {
   const isAuthenticated = localStorage.getItem('isAuthenticated') === 'true';
   const isAdmin = localStorage.getItem('isAdmin') === 'true';

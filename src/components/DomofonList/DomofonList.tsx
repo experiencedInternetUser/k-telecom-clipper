@@ -14,7 +14,6 @@ const DomofonList = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    // эмуляция загрузки
     setIsLoading(true);
     setTimeout(() => {
       setDomofons(mockDomofons);
@@ -23,7 +22,6 @@ const DomofonList = () => {
     }, 300);
   }, []);
 
-  // Подмассив для текущей страницы
   const paginated = domofons.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
 
   const handleSelect = (d: Domofon) => {

@@ -101,12 +101,10 @@ const AdminPanel: React.FC = () => {
   };
 
   const handleUpdateStream = (streamId: string, payload: Partial<Stream> & Partial<NewStreamForm>) => {
-    // Обновляем поток
     setStreams(prev =>
       prev.map(s => {
         if (s.id !== streamId) return s;
 
-        // payload может содержать cameraAddress / selectedUsers / rtspUrl и т.д.
         const updated: Stream = {
           ...s,
           address: (payload as any).cameraAddress ?? payload.address ?? s.address,
@@ -120,12 +118,9 @@ const AdminPanel: React.FC = () => {
       })
     );
 
-    // Синхронизируем пользователей: если назначенные пользователи поменялись,
-    // нужно убрать/добавить ссылки в users[].assignedStreams и обновить streamCount.
     const newAssigned = (payload as any).selectedUsers as string[] | undefined;
     if (newAssigned) {
       setUsers(prevUsers => {
-        // получаем предыдущий список assigned для этого потока
         const prevAssigned = streams.find(s => s.id === streamId)?.assignedUsers ?? [];
 
         const toAdd = newAssigned.filter(id => !prevAssigned.includes(id));
@@ -154,10 +149,8 @@ const AdminPanel: React.FC = () => {
   };
 
   const handleDeleteStreamConfirmed = (id: string) => {
-    // удаляем поток из списка
     setStreams(prev => prev.filter(s => s.id !== id));
 
-    // удаляем ссылку на поток у пользователей
     setUsers(prevUsers =>
       prevUsers.map(u => {
         const assigned = (u.assignedStreams ?? []).filter(sid => sid !== id);
@@ -199,7 +192,6 @@ const AdminPanel: React.FC = () => {
   };
 
 const handleAssignToUser = (userId: string, assignedStreamIds: string[]) => {
-  // 1) Обновляем users: присваиваем выбранному пользователю новый массив assignedStreams
   setUsers(prevUsers =>
     prevUsers.map(u => {
       if (u.id === userId) {
@@ -209,25 +201,21 @@ const handleAssignToUser = (userId: string, assignedStreamIds: string[]) => {
     })
   );
 
-  // 2) Обновляем streams: для каждого потока добавляем/убираем userId в assignedUsers, корректируем userCount
   setStreams(prevStreams =>
     prevStreams.map(s => {
       const wasAssigned = (s.assignedUsers ?? []).includes(userId);
       const shouldBeAssigned = assignedStreamIds.includes(s.id);
 
       if (shouldBeAssigned && !wasAssigned) {
-        // добавляем пользователя в поток
         const updatedAssigned = [...(s.assignedUsers ?? []), userId];
         return { ...s, assignedUsers: updatedAssigned, userCount: updatedAssigned.length };
       }
 
       if (!shouldBeAssigned && wasAssigned) {
-        // удаляем пользователя из потока
         const updatedAssigned = (s.assignedUsers ?? []).filter(uid => uid !== userId);
         return { ...s, assignedUsers: updatedAssigned, userCount: updatedAssigned.length };
       }
 
-      // если ничего не меняется
       return s;
     })
   );

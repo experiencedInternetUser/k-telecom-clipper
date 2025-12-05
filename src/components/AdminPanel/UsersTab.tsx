@@ -12,17 +12,15 @@ interface Props {
   onAssign: (userId: string, assigned: string[]) => void;
 }
 
-const ITEMS_PER_PAGE = 10; // пагинация справа — 10 элементов на страницу
+const ITEMS_PER_PAGE = 10;
 
 const UsersTab: React.FC<Props> = ({ users, streams, selectedUserId = null, onSelectUser, onEdit, onDelete, onAssign }) => {
   const [localSelected, setLocalSelected] = useState<string | null>(selectedUserId ?? (users[0]?.id ?? null));
 
-  // Пагинация (локальная для правой колонки)
   const [currentPage, setCurrentPage] = useState<number>(1);
   const [totalPages, setTotalPages] = useState<number>(1);
 
   useEffect(() => {
-    // синхронизируем выбранного пользователя с пропсами (если родитель контролирует)
     if (selectedUserId !== undefined && selectedUserId !== localSelected) {
       setLocalSelected(selectedUserId);
     }
@@ -35,7 +33,6 @@ const UsersTab: React.FC<Props> = ({ users, streams, selectedUserId = null, onSe
     }
   }, [users, localSelected, onSelectUser]);
 
-  // Если streams изменились — пересчитываем количество страниц и корректируем текущую страницу
   useEffect(() => {
     const tp = Math.max(1, Math.ceil(streams.length / ITEMS_PER_PAGE));
     setTotalPages(tp);
@@ -61,7 +58,6 @@ const UsersTab: React.FC<Props> = ({ users, streams, selectedUserId = null, onSe
     onAssign(selectedUser.id, newAssigned);
   };
 
-  // пагинированный набор потоков для отображения
   const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
   const displayedStreams = streams.slice(startIndex, startIndex + ITEMS_PER_PAGE);
 
@@ -81,7 +77,6 @@ const UsersTab: React.FC<Props> = ({ users, streams, selectedUserId = null, onSe
       start = Math.max(1, end - maxVisible + 1);
     }
 
-    // Назад
     pages.push(
       <button
         key="prev"
@@ -93,7 +88,6 @@ const UsersTab: React.FC<Props> = ({ users, streams, selectedUserId = null, onSe
       </button>
     );
 
-    // первая страница + эллипсис
     if (start > 1) {
       pages.push(
         <button key={1} className={styles.pageNumber} onClick={() => goToPage(1)}>
@@ -129,7 +123,6 @@ const UsersTab: React.FC<Props> = ({ users, streams, selectedUserId = null, onSe
       );
     }
 
-    // Вперед
     pages.push(
       <button
         key="next"
@@ -146,7 +139,6 @@ const UsersTab: React.FC<Props> = ({ users, streams, selectedUserId = null, onSe
 
   return (
     <div className={styles.container}>
-      {/* левая колонка — список пользователей (без изменений) */}
       <div className={styles.left}>
         <div className={styles.usersList}>
           {users.map(user => {
@@ -168,7 +160,6 @@ const UsersTab: React.FC<Props> = ({ users, streams, selectedUserId = null, onSe
         </div>
       </div>
 
-      {/* правая колонка — таблица потоков с пагинацией */}
       <div className={styles.right}>
         <div className={styles.streamsTableContainer}>
           <table className={styles.streamsTable}>
@@ -215,7 +206,6 @@ const UsersTab: React.FC<Props> = ({ users, streams, selectedUserId = null, onSe
           </table>
         </div>
 
-        {/* пагинация справа */}
         {totalPages > 1 && (
           <div className={styles.paginationWrap}>
             <div className={styles.pagination}>

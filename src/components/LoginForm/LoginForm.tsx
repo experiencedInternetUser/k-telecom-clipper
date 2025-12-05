@@ -30,7 +30,6 @@ const LoginForm: React.FC = () => {
     }
 
     try {
-      // имитация запроса
       await new Promise(resolve => setTimeout(resolve, 700));
       localStorage.setItem('isAuthenticated', 'true');
       localStorage.setItem('userLogin', formData.login);

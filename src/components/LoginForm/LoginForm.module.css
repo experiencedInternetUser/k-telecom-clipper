@@ -28,8 +28,6 @@
   font-weight: 600;
 }
 
-/* Убрали подпись под заголовком */
-/* .header p { ... } */
 
 .error {
   background-color: #fee;
@@ -52,7 +50,6 @@ label {
   font-weight: 600;
   color: #333;
   font-size: 0.95rem;
-  /* двоеточие убрано в JSX */
 }
 
 input {
@@ -119,7 +116,6 @@ input:disabled {
   opacity: 0.5;
 }
 
-/* Кнопка Войти: цвет согласно требованию #C8235A */
 .submitButton {
   width: 100%;
   padding: 0.875rem;
@@ -145,7 +141,6 @@ input:disabled {
   transform: none;
 }
 
-/* Убрали demoButton стили — кнопка удалена из JSX */
 
 .skipSection {
   text-align: center;
@@ -195,7 +190,6 @@ input:disabled {
   }
 }
 
-/* Сохранена секция админ входа */
 .adminSection {
   text-align: center;
   border-top: 1px solid #e1e5e9;

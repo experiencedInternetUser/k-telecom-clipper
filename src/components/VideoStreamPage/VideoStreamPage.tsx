@@ -21,7 +21,6 @@ const VideoStreamPage = () => {
   const [currentPolygon, setCurrentPolygon] = useState<Point[]>([]);
   const [isSaved, setIsSaved] = useState(false);
 
-  // undo/redo stacks for current polygon
   const [redoStack, setRedoStack] = useState<Point[]>([]);
   const [confirmModalOpen, setConfirmModalOpen] = useState(false);
 
@@ -55,7 +54,6 @@ const VideoStreamPage = () => {
 
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    // draw existing polygons
     polygons.forEach(polygon => {
       if (polygon.points.length < 3) return;
       ctx.save();
@@ -73,7 +71,6 @@ const VideoStreamPage = () => {
       ctx.restore();
     });
 
-    // draw current polygon in progress
     if (currentPolygon.length > 0) {
       ctx.save();
       ctx.strokeStyle = '#ff6b6b';
@@ -100,7 +97,7 @@ const VideoStreamPage = () => {
     }
   }, [polygons, currentPolygon]);
 
-  // add point on click (no double-click finish)
+
   const handleVideoClick = (event: React.MouseEvent<HTMLDivElement>) => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -109,7 +106,7 @@ const VideoStreamPage = () => {
     const y = event.clientY - rect.top;
 
     setCurrentPolygon(prev => {
-      setRedoStack([]); // new action clears redo
+      setRedoStack([]);
       return [...prev, { x, y }];
     });
 
@@ -137,19 +134,15 @@ const VideoStreamPage = () => {
   };
 
   const saveClick = () => {
-    // show confirm modal; do not finalize automatically
     setConfirmModalOpen(true);
-    // keep Save button red — set isSaved true to reflect visually if needed
     setIsSaved(true);
   };
 
   const confirmStay = () => {
     setConfirmModalOpen(false);
-    // do nothing (stay on page)
   };
 
   const confirmExit = () => {
-    // Clear selections and navigate back to domofons
     setPolygons([]);
     setCurrentPolygon([]);
     setRedoStack([]);

@@ -31,7 +31,6 @@
   font-weight: 600;
 }
 
-/* Инструкции: текст слева, иконки справа */
 .instructions {
   display: flex;
   justify-content: space-between;
@@ -47,7 +46,6 @@
   gap: 0.25rem;
 }
 
-/* SemiBold для основного текста */
 .instructionPrimary {
   color: #020617;
   margin: 0;
@@ -55,14 +53,12 @@
   font-weight: 600; /* SemiBold */
 }
 
-/* второстепенный текст — цвет #64748B */
 .instructionSecondary {
   color: #64748B;
   margin: 0;
   font-size: 0.95rem;
 }
 
-/* Правый блок: иконки вместе */
 .instrButtons {
   display: flex;
   flex-direction: row;
@@ -71,7 +67,6 @@
   justify-content: flex-end;
 }
 
-/* Иконки-кнопки без border, с эффектом инвертирования при active/focus */
 .iconButton {
   width: 44px;
   height: 44px;
@@ -85,14 +80,12 @@
   padding: 6px;
 }
 
-/* disabled state for icon: light background & reduced opacity */
 .iconButton:disabled {
   background: #E2E8F0;
   cursor: not-allowed;
   opacity: 0.6;
 }
 
-/* Картинка внутри кнопки */
 .iconImage {
   width: 20px;
   height: 20px;
@@ -100,7 +93,6 @@
   filter: none;
 }
 
-/* При нажатии (active / focus) — фон черный, иконка инвертируется (стрелка белая) */
 .iconButton:active:not(:disabled),
 .iconButton:focus-visible:not(:disabled) {
   background: #000;
@@ -111,12 +103,10 @@
   filter: invert(1) brightness(2);
 }
 
-/* hover only for enabled */
 .iconButton:not(:disabled):hover {
   background: #f3f4f6;
 }
 
-/* Контейнер видеопотока */
 .videoContainer {
   background: white;
   border-radius: 12px;
@@ -164,7 +154,6 @@
   pointer-events: none;
 }
 
-/* Footer (кнопки Назад/Сохранить) */
 .footer {
   display: flex;
   justify-content: space-between;
@@ -181,7 +170,6 @@
   font-weight: 600;
 }
 
-/* Нижняя кнопка Назад (возврат в список) — белый фон, есть border, текст #C8235A */
 .backButton {
   background: #fff;
   color: #C8235A;
@@ -189,7 +177,6 @@
 }
 .backButton:hover { background: #fff; }
 
-/* Save button: bg #C8235A, text #F8FAFC; when disabled — lighter */
 .saveButton {
   background-color: #C8235A;
   color: #F8FAFC;
@@ -201,7 +188,6 @@
   cursor: not-allowed;
 }
 
-/* Confirmation modal */
 .confirmOverlay {
   position: fixed;
   inset: 0;
@@ -232,7 +218,7 @@
 
 .confirmTitle {
   margin: 0;
-  color: #020617; /* заголовок */
+  color: #020617;
   font-size: 1.25rem;
   font-weight: 700;
 }
@@ -251,18 +237,16 @@
 
 .confirmText {
   margin: 0 0 18px 0;
-  color: #64748B; /* текст внутри модалки */
+  color: #64748B;
   line-height: 1.4;
 }
 
-/* actions: two buttons on same axis */
 .confirmActions {
   display: flex;
   gap: 12px;
   justify-content: flex-end;
 }
 
-/* Остаться: белый bg, border, text #C8235A */
 .stayButton {
   background: #fff;
   color: #C8235A;
@@ -273,7 +257,6 @@
   cursor: pointer;
 }
 
-/* Выйти: bg #C8235A, text white, no border */
 .exitButton {
   background: #C8235A;
   color: #fff;
@@ -284,7 +267,6 @@
   cursor: pointer;
 }
 
-/* Responsive tweaks */
 @media (max-width: 768px) {
   .videoPlaceholder { height: 320px; }
   .instructions { padding: 0 12px; flex-direction: column; align-items: flex-start; gap: 0.5rem; }

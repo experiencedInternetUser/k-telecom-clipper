@@ -11,11 +11,7 @@ const VideoStreamPage = () => {
   const videoRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
-  const selectedDomofon = (location.state as { domofon: Domofon })?.domofon || {
-    id: '1',
-    address: 'г. Екатеринбург, ул. Гагарина, д. 23',
-    entrance: 'под. 2'
-  };
+  const selectedDomofon = (location.state as { domofon: Domofon })?.domofon;
 
   const [polygons, setPolygons] = useState<Polygon[]>([]);
   const [currentPolygon, setCurrentPolygon] = useState<Point[]>([]);
@@ -54,22 +50,22 @@ const VideoStreamPage = () => {
 
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    polygons.forEach(polygon => {
-      if (polygon.points.length < 3) return;
-      ctx.save();
-      ctx.strokeStyle = '#007bff';
-      ctx.lineWidth = 2;
-      ctx.fillStyle = 'rgba(0, 123, 255, 0.12)';
-      ctx.beginPath();
-      ctx.moveTo(polygon.points[0].x, polygon.points[0].y);
-      for (let i = 1; i < polygon.points.length; i++) {
-        ctx.lineTo(polygon.points[i].x, polygon.points[i].y);
-      }
-      ctx.closePath();
-      ctx.fill();
-      ctx.stroke();
-      ctx.restore();
-    });
+    // polygons.forEach(polygon => {
+    //   if (polygon.points.length < 3) return;
+    //   ctx.save();
+    //   ctx.strokeStyle = '#007bff';
+    //   ctx.lineWidth = 2;
+    //   ctx.fillStyle = 'rgba(0, 123, 255, 0.12)';
+    //   ctx.beginPath();
+    //   ctx.moveTo(polygon.points[0].x, polygon.points[0].y);
+    //   for (let i = 1; i < polygon.points.length; i++) {
+    //     ctx.lineTo(polygon.points[i].x, polygon.points[i].y);
+    //   }
+    //   ctx.closePath();
+    //   ctx.fill();
+    //   ctx.stroke();
+    //   ctx.restore();
+    // });
 
     if (currentPolygon.length > 0) {
       ctx.save();
@@ -143,14 +139,10 @@ const VideoStreamPage = () => {
   };
 
   const confirmExit = () => {
-    setPolygons([]);
-    setCurrentPolygon([]);
-    setRedoStack([]);
-    setConfirmModalOpen(false);
-    navigate('/domofons');
-  };
-
-  const backToList = () => {
+    // setPolygons([]);
+    // setCurrentPolygon([]);
+    // setRedoStack([]);
+    // setConfirmModalOpen(false);
     navigate('/domofons');
   };
 
@@ -206,7 +198,7 @@ const VideoStreamPage = () => {
           aria-label="Область видеопотока — клик для добавления точки"
         >
           <div className={styles.videoPlaceholderContent}>
-            <div className={styles.videoIcon}>📹</div>
+            <div className={styles.videoIcon}>...</div>
             <p className={styles.videoResolution}>1920×1080</p>
           </div>
 
@@ -217,7 +209,7 @@ const VideoStreamPage = () => {
       <div className={styles.footer}>
         <div style={{ display: 'flex', gap: '1rem' }}>
           <button
-            onClick={backToList}
+            onClick={confirmExit}
             className={`${styles.footerButton} ${styles.backButton}`}
           >
             Назад

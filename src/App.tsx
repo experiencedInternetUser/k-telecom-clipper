@@ -5,6 +5,7 @@ import VideoStreamPage from './components/VideoStreamPage/VideoStreamPage';
 import AdminPanel from './components/AdminPanel';
 import './App.css';
 import logo from './assets/logo.png';
+import type { JSX } from 'react';
 
 const ProtectedRoute = ({ children, adminOnly = false }: { children: JSX.Element, adminOnly?: boolean }) => {
   const isAuthenticated = localStorage.getItem('isAuthenticated') === 'true';

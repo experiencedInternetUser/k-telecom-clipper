@@ -43,17 +43,18 @@ const DomofonList = () => {
       start = Math.max(1, end - maxVisible + 1);
     }
 
-    if (start > 1) {
-      pages.push(1);
-      if (start > 2) pages.push('ellipsis');
-    }
-
-    for (let i = start; i <= end; i++) pages.push(i);
+    // if (start > 1) {
+    //   pages.push(1);
+    //   if (start > 2) pages.push('ellipsis');
+    // }
 
     if (end < totalPages) {
       if (end < totalPages - 1) pages.push('ellipsis');
       pages.push(totalPages);
     }
+
+    for (let i = start; i <= end; i++) pages.push(i);
+
 
     return (
       <div className={styles.pagination}>

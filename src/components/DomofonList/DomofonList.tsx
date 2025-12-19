@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import styles from './DomofonList.module.css';
 import type { Domofon } from '../../types/Domofon';
 import { useNavigate } from 'react-router-dom';
-import { mockDomofons } from "../../mocks";
+import { streamsApi } from '../../api/streams.api';
 
 const ITEMS_PER_PAGE = 10;
 
@@ -11,18 +11,34 @@ const DomofonList = () => {
   const [currentPage, setCurrentPage] = useState<number>(1);
   const [totalPages, setTotalPages] = useState<number>(1);
   const [isLoading, setIsLoading] = useState(true);
+
   const navigate = useNavigate();
 
   useEffect(() => {
-    setIsLoading(true);
-    setTimeout(() => {
-      setDomofons(mockDomofons);
-      setTotalPages(Math.max(1, Math.ceil(mockDomofons.length / ITEMS_PER_PAGE)));
-      setIsLoading(false);
-    }, 300);
+    const load = async () => {
+      setIsLoading(true);
+
+      try {
+        const data = await streamsApi.getAll();
+
+        setDomofons(data);
+        setTotalPages(Math.max(1, Math.ceil(data.length / ITEMS_PER_PAGE)));
+      } catch (e) {
+        console.error('Ошибка загрузки домофонов', e);
+        setDomofons([]);
+        setTotalPages(1);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    load();
   }, []);
 
-  const paginated = domofons.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
+  const paginated = domofons.slice(
+    (currentPage - 1) * ITEMS_PER_PAGE,
+    currentPage * ITEMS_PER_PAGE
+  );
 
   const handleSelect = (d: Domofon) => {
     navigate('/video', { state: { domofon: d } });
@@ -37,16 +53,13 @@ const DomofonList = () => {
   const renderPagination = () => {
     const pages: (number | 'ellipsis')[] = [];
     const maxVisible = 5;
+
     let start = Math.max(1, currentPage - Math.floor(maxVisible / 2));
     let end = Math.min(totalPages, start + maxVisible - 1);
+
     if (end - start + 1 < maxVisible) {
       start = Math.max(1, end - maxVisible + 1);
     }
-
-    // if (start > 1) {
-    //   pages.push(1);
-    //   if (start > 2) pages.push('ellipsis');
-    // }
 
     if (end < totalPages) {
       if (end < totalPages - 1) pages.push('ellipsis');
@@ -54,7 +67,6 @@ const DomofonList = () => {
     }
 
     for (let i = start; i <= end; i++) pages.push(i);
-
 
     return (
       <div className={styles.pagination}>
@@ -74,7 +86,9 @@ const DomofonList = () => {
             ) : (
               <button
                 key={p}
-                className={`${styles.pageNumber} ${currentPage === p ? styles.activePage : ''}`}
+                className={`${styles.pageNumber} ${
+                  currentPage === p ? styles.activePage : ''
+                }`}
                 onClick={() => handlePageChange(p)}
                 aria-current={currentPage === p ? 'page' : undefined}
               >
@@ -99,7 +113,7 @@ const DomofonList = () => {
   if (isLoading) {
     return (
       <div className={styles.container}>
-        <div className={styles.loading}>Загрузка...</div>
+        <div className={styles.loading}>Загрузка.</div>
       </div>
     );
   }
@@ -120,7 +134,9 @@ const DomofonList = () => {
             tabIndex={0}
             onKeyDown={(e) => { if (e.key === 'Enter') handleSelect(d); }}
           >
-            <div className={styles.title}>{d.address}{d.entrance ? `, ${d.entrance}` : ''}</div>
+            <div className={styles.title}>
+              {d.address}{d.entrance ? `, ${d.entrance}` : ''}
+            </div>
             <div className={styles.separator} />
           </li>
         ))}

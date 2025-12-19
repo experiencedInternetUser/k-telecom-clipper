@@ -40,12 +40,24 @@ const LoginForm: React.FC = () => {
     setError('');
 
     try {
-      await authApi.login({
+      const res = await authApi.login({
         email: formData.login,
         password: formData.password,
       });
 
-      navigate('/domofons');
+      // состояние авторизации
+      localStorage.setItem('isAuthenticated', 'true');
+      localStorage.setItem(
+        'isAdmin',
+        res.user.role === 'admin' ? 'true' : 'false'
+      );
+
+      // редирект по роли
+      if (res.user.role === 'admin') {
+        navigate('/admin', { replace: true });
+      } else {
+        navigate('/domofons', { replace: true });
+      }
     } catch (err: any) {
       if (err?.response?.status === 401) {
         setError('Неверный логин или пароль');
@@ -62,19 +74,24 @@ const LoginForm: React.FC = () => {
     setError('');
 
     try {
-      await authApi.login({
+      const res = await authApi.login({
         email: 'admin@test.ru',
         password: 'admin',
       });
 
-      navigate('/admin');
+      localStorage.setItem('isAuthenticated', 'true');
+      localStorage.setItem(
+        'isAdmin',
+        res.user.role === 'admin' ? 'true' : 'false'
+      );
+
+      navigate('/admin', { replace: true });
     } catch {
       setError('Не удалось войти как админ');
     } finally {
       setIsLoading(false);
     }
   };
-
 
   const handleSkipAuth = () => {
     setError('Режим гостя отключён');

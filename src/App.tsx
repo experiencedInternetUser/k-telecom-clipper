@@ -7,8 +7,11 @@ import './App.css';
 import logo from './assets/logo.png';
 import type { JSX } from 'react';
 
-const ProtectedRoute = ({ children, adminOnly = false }: { children: JSX.Element, adminOnly?: boolean }) => {
-  const isAuthenticated = localStorage.getItem('isAuthenticated') === 'true';
+const ProtectedRoute = ({children, adminOnly = false,}: { children: JSX.Element; adminOnly?: boolean;}) => {
+  const isAuthenticated =
+    localStorage.getItem('isAuthenticated') === 'true' ||
+    Boolean(localStorage.getItem('access_token'));
+
   const isAdmin = localStorage.getItem('isAdmin') === 'true';
 
   if (!isAuthenticated) {
@@ -33,6 +36,7 @@ function App() {
         <div className="page-container">
           <Routes>
             <Route path="/" element={<LoginForm />} />
+
             <Route
               path="/domofons"
               element={
@@ -41,6 +45,7 @@ function App() {
                 </ProtectedRoute>
               }
             />
+
             <Route
               path="/video"
               element={
@@ -49,6 +54,7 @@ function App() {
                 </ProtectedRoute>
               }
             />
+
             <Route
               path="/admin"
               element={
@@ -57,6 +63,7 @@ function App() {
                 </ProtectedRoute>
               }
             />
+
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </div>

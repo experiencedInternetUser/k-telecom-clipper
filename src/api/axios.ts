@@ -37,7 +37,6 @@ api.interceptors.response.use(
       return Promise.reject(error);
     }
 
-    // защита от бесконечного refresh
     if (originalRequest._retry) {
       localStorage.removeItem("access_token");
       localStorage.removeItem("refresh_token");

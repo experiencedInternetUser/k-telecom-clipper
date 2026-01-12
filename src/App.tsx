@@ -12,14 +12,14 @@ const ProtectedRoute = ({children, adminOnly = false,}: { children: JSX.Element;
     localStorage.getItem('isAuthenticated') === 'true' ||
     Boolean(localStorage.getItem('access_token'));
 
-  const isAdmin = localStorage.getItem('isAdmin') === 'true';
+    const isAdmin = Boolean(localStorage.getItem('access_token'));
 
   if (!isAuthenticated) {
     return <Navigate to="/" replace />;
   }
 
   if (adminOnly && !isAdmin) {
-    return <Navigate to="/domofons" replace />;
+    return <Navigate to="/" replace />;
   }
 
   return children;

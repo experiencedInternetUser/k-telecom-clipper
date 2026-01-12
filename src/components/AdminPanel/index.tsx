@@ -7,7 +7,7 @@ import StreamModal from './StreamModal';
 import UserModal from './UserModal';
 import DeleteModal from './DeleteModal';
 import SearchBar from './SearchBar';
-import { mockStreams, mockUsers } from "../../mocks";
+import { adminApi } from '../../api/admin.api';
 
 const ITEMS_PER_PAGE = 10;
 
@@ -22,6 +22,7 @@ const AdminPanel: React.FC = () => {
 
   const [streams, setStreams] = useState<Stream[]>([]);
   const [users, setUsers] = useState<User[]>([]);
+  const [loading, setLoading] = useState(true);
 
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
 
@@ -37,11 +38,36 @@ const AdminPanel: React.FC = () => {
   const [currentPage, setCurrentPage] = useState<number>(1);
   const [totalPages, setTotalPages] = useState<number>(1);
 
+
+  /* ---------- LOAD DATA ---------- */
   useEffect(() => {
-    setStreams(mockStreams);
-    setUsers(mockUsers);
+const load = async () => {
+  try {
+    setLoading(true);
+
+    const streamsRes = await adminApi.getStreams();
+    const usersRes = await adminApi.getUsers();
+    // 2 cn
+    setStreams(Array.isArray(streamsRes) ? streamsRes : []);
+    setUsers(Array.isArray(usersRes) ? usersRes : []);
+
+    console.log('STREAMS:', streamsRes);
+    console.log('USERS:', usersRes);
+
+    setStreams(streamsRes);
+    setUsers(usersRes);
+  } catch (e) {
+    console.error('ADMIN LOAD ERROR', e);
+  } finally {
+    setLoading(false);
+  }
+};
+
+
+    load();
   }, []);
 
+  /* ---------- USERS SELECTION ---------- */
   useEffect(() => {
     if (!selectedUserId && users.length > 0) {
       setSelectedUserId(users[0].id);
@@ -51,6 +77,7 @@ const AdminPanel: React.FC = () => {
     }
   }, [users, selectedUserId]);
 
+  /* ---------- FILTER & PAGINATION ---------- */
   const filteredStreams = useMemo(() => {
     if (!query.trim()) return streams;
     return streams.filter(s =>
@@ -68,170 +95,76 @@ const AdminPanel: React.FC = () => {
     return filteredStreams.slice(start, start + ITEMS_PER_PAGE);
   }, [filteredStreams, currentPage]);
 
-
-  const handleCreateStream = (data: NewStreamForm) => {
-    const newStreamId = Date.now().toString();
-    const assigned = data.selectedUsers ?? [];
-    const newStream: Stream = {
-      id: newStreamId,
-      address: data.cameraAddress,
-      entrance: '-',
-      rtspUrl: data.rtspUrl,
-      userCount: assigned.length,
-      isOnline: true,
-      lastActive: '',
-      assignedUsers: assigned
-    };
-
-    setStreams(prev => [newStream, ...prev]);
-    if (assigned.length > 0) {
-      setUsers(prevUsers =>
-        prevUsers.map(u =>
-          assigned.includes(u.id)
-            ? {
-                ...u,
-                assignedStreams: Array.from(new Set([...(u.assignedStreams ?? []), newStreamId])),
-                streamCount: (Array.from(new Set([...(u.assignedStreams ?? []), newStreamId]))).length
-              }
-            : u
-        )
-      );
-    }
+  /* ---------- STREAM CRUD ---------- */
+  const handleCreateStream = async (data: NewStreamForm) => {
+    const created = await adminApi.createStream(data);
+    setStreams(prev => [created, ...prev]);
     setStreamModalOpen(false);
   };
 
-  const handleUpdateStream = (streamId: string, payload: Partial<Stream> & Partial<NewStreamForm>) => {
-    setStreams(prev =>
-      prev.map(s => {
-        if (s.id !== streamId) return s;
-
-        const updated: Stream = {
-          ...s,
-          address: (payload as any).cameraAddress ?? payload.address ?? s.address,
-          rtspUrl: payload.rtspUrl ?? s.rtspUrl,
-          entrance: payload.entrance ?? s.entrance,
-          lastActive: payload.lastActive ?? s.lastActive,
-          assignedUsers: (payload as any).selectedUsers ?? payload.assignedUsers ?? s.assignedUsers,
-        };
-        updated.userCount = (updated.assignedUsers ?? []).length;
-        return updated;
-      })
-    );
-
-    const newAssigned = (payload as any).selectedUsers as string[] | undefined;
-    if (newAssigned) {
-      setUsers(prevUsers => {
-        const prevAssigned = streams.find(s => s.id === streamId)?.assignedUsers ?? [];
-
-        const toAdd = newAssigned.filter(id => !prevAssigned.includes(id));
-        const toRemove = prevAssigned.filter(id => !newAssigned.includes(id));
-
-        return prevUsers.map(u => {
-          let assigned = u.assignedStreams ? [...u.assignedStreams] : [];
-
-          if (toAdd.includes(u.id)) {
-            assigned = Array.from(new Set([...assigned, streamId]));
-          }
-          if (toRemove.includes(u.id)) {
-            assigned = assigned.filter(sid => sid !== streamId);
-          }
-          return {
-            ...u,
-            assignedStreams: assigned,
-            streamCount: assigned.length
-          };
-        });
-      });
-    }
-
+  const handleUpdateStream = async (id: string, payload: Partial<NewStreamForm>) => {
+    const updated = await adminApi.updateStream(id, payload);
+    setStreams(prev => prev.map(s => s.id === id ? updated : s));
     setEditingStream(null);
     setStreamModalOpen(false);
   };
 
-  const handleDeleteStreamConfirmed = (id: string) => {
+  const handleDeleteStreamConfirmed = async (id: string) => {
+    await adminApi.deleteStream(id);
     setStreams(prev => prev.filter(s => s.id !== id));
-
-    setUsers(prevUsers =>
-      prevUsers.map(u => {
-        const assigned = (u.assignedStreams ?? []).filter(sid => sid !== id);
-        return { ...u, assignedStreams: assigned, streamCount: assigned.length };
-      })
-    );
-
     setDeleteTarget(null);
   };
 
-  const handleCreateUser = (data: UserForm) => {
-    const newUser: User = {
-      id: Date.now().toString(),
-      login: data.login,
-      email: data.email,
-      password: data.password,
-      registrationDate: new Date().toISOString(),
-      lastLogin: new Date().toISOString(),
-      streamCount: 0,
-      isActive: true,
-      assignedStreams: [],
-    };
-    setUsers(prev => [newUser, ...prev]);
+  /* ---------- USER CRUD ---------- */
+  const handleCreateUser = async (data: UserForm) => {
+    const created = await adminApi.createUser(data);
+    setUsers(prev => [created, ...prev]);
     setUserModalOpen(false);
   };
 
-  const handleUpdateUser = (id: string, payload: Partial<User>) => {
-    setUsers(prev => prev.map(u => u.id === id ? { ...u, ...payload } : u));
+  const handleUpdateUser = async (id: string, payload: Partial<User>) => {
+    const updated = await adminApi.updateUser(id, payload);
+    setUsers(prev => prev.map(u => u.id === id ? updated : u));
     setEditingUser(null);
     setUserModalOpen(false);
   };
 
-  const handleDeleteUserConfirmed = (id: string) => {
+  const handleDeleteUserConfirmed = async (id: string) => {
+    await adminApi.deleteUser(id);
     setUsers(prev => prev.filter(u => u.id !== id));
     setDeleteTarget(null);
-    if (selectedUserId === id) {
-      setSelectedUserId(users[0]?.id ?? null);
-    }
   };
 
-const handleAssignToUser = (userId: string, assignedStreamIds: string[]) => {
-  setUsers(prevUsers =>
-    prevUsers.map(u => {
-      if (u.id === userId) {
-        return { ...u, assignedStreams: assignedStreamIds, streamCount: assignedStreamIds.length };
-      }
-      return u;
-    })
-  );
+  /* ---------- ASSIGN STREAMS ---------- */
+  const handleAssignToUser = async (userId: string, assignedStreamIds: string[]) => {
+    await adminApi.assignStreamsToUser(userId, assignedStreamIds);
 
-  setStreams(prevStreams =>
-    prevStreams.map(s => {
-      const wasAssigned = (s.assignedUsers ?? []).includes(userId);
-      const shouldBeAssigned = assignedStreamIds.includes(s.id);
+    setUsers(prev =>
+      prev.map(u =>
+        u.id === userId
+          ? { ...u, assignedStreams: assignedStreamIds, streamCount: assignedStreamIds.length }
+          : u
+      )
+    );
+  };
 
-      if (shouldBeAssigned && !wasAssigned) {
-        const updatedAssigned = [...(s.assignedUsers ?? []), userId];
-        return { ...s, assignedUsers: updatedAssigned, userCount: updatedAssigned.length };
-      }
+  const openDeleteForStream = (s: Stream) =>
+    setDeleteTarget({ type: 'stream', id: s.id, label: s.address });
 
-      if (!shouldBeAssigned && wasAssigned) {
-        const updatedAssigned = (s.assignedUsers ?? []).filter(uid => uid !== userId);
-        return { ...s, assignedUsers: updatedAssigned, userCount: updatedAssigned.length };
-      }
+  const openDeleteForUser = (u: User) =>
+    setDeleteTarget({ type: 'user', id: u.id, label: u.login });
 
-      return s;
-    })
-  );
-};
+  const selectedUser = users.find(u => u.id === selectedUserId) ?? null;
 
+  if (loading) {
+    return <div className={styles.container}>Загрузка...</div>;
+  }
 
   const handlePageChange = (page: number) => {
     if (page < 1 || page > totalPages) return;
     setCurrentPage(page);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
-
-  const openDeleteForStream = (stream: Stream) => setDeleteTarget({ type: 'stream', id: stream.id, label: stream.address });
-  const openDeleteForUser = (user: User) => setDeleteTarget({ type: 'user', id: user.id, label: user.login });
-
-  const selectedUser = users.find(u => u.id === selectedUserId) ?? null;
 
   return (
     <div className={styles.container}>

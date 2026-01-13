@@ -48,8 +48,8 @@ const load = async () => {
     const streamsRes = await adminApi.getStreams();
     const usersRes = await adminApi.getUsers();
     // 2 cn
-    setStreams(Array.isArray(streamsRes) ? streamsRes : []);
-    setUsers(Array.isArray(usersRes) ? usersRes : []);
+    // setStreams(Array.isArray(streamsRes) ? streamsRes : []);
+    // setUsers(Array.isArray(usersRes) ? usersRes : []);
 
     console.log('STREAMS:', streamsRes);
     console.log('USERS:', usersRes);

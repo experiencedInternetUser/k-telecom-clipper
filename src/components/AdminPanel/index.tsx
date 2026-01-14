@@ -1,58 +1,53 @@
-import React, { useEffect, useMemo, useState } from 'react';
-import styles from './AdminPanel.module.css';
-import type { Stream } from '../../types/Admin';
-import type { User } from '../../types/User';
-import StreamsTab from './StreamsTab';
-import UsersTab from './UsersTab';
-import StreamModal from './StreamModal';
-import UserModal from './UserModal';
-import DeleteModal from './DeleteModal';
-import SearchBar from './SearchBar';
-import { adminApi } from '../../api/admin.api';
+import { useEffect, useMemo, useState } from "react";
+import styles from "./AdminPanel.module.css";
+
+import type { Stream, AdminUser } from "../../types/Admin";
+import StreamsTab from "./StreamsTab";
+import UsersTab from "./UsersTab";
+import StreamModal from "./StreamModal";
+import DeleteModal from "./DeleteModal";
+import SearchBar from "./SearchBar";
+
+import { adminApi } from "../../api/admin.api";
 
 const ITEMS_PER_PAGE = 10;
 
 type DeleteTarget = {
-  type: 'stream' | 'user';
+  type: "stream" | "user";
   id: number;
   label?: string;
 };
 
-const AdminPanel: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<'streams' | 'users'>('streams');
+const AdminPanel = () => {
+  const [activeTab, setActiveTab] = useState<"streams" | "users">("streams");
 
   const [streams, setStreams] = useState<Stream[]>([]);
-  const [users, setUsers] = useState<User[]>([]);
+  const [users, setUsers] = useState<AdminUser[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const [selectedUserId, setSelectedUserId] = useState<number | null>(null);
-
-  const [isStreamModalOpen, setStreamModalOpen] = useState(false);
-  const [isUserModalOpen, setUserModalOpen] = useState(false);
-  const [editingStream, setEditingStream] = useState<Stream | null>(null);
-  const [editingUser, setEditingUser] = useState<User | null>(null);
-
-  const [deleteTarget, setDeleteTarget] = useState<DeleteTarget | null>(null);
-  const [query, setQuery] = useState('');
+  const [query, setQuery] = useState("");
 
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+
+  const [editingStream, setEditingStream] = useState<Stream | null>(null);
+  const [isStreamModalOpen, setStreamModalOpen] = useState(false);
+
+  const [deleteTarget, setDeleteTarget] = useState<DeleteTarget | null>(null);
 
   /* ---------- LOAD DATA ---------- */
   useEffect(() => {
     const load = async () => {
       try {
         setLoading(true);
-
         const [streamsRes, usersRes] = await Promise.all([
           adminApi.getStreams(),
           adminApi.getUsers(),
         ]);
-
         setStreams(streamsRes);
         setUsers(usersRes);
       } catch (e) {
-        console.error('ADMIN LOAD ERROR', e);
+        console.error("ADMIN LOAD ERROR", e);
       } finally {
         setLoading(false);
       }
@@ -61,14 +56,15 @@ const AdminPanel: React.FC = () => {
     load();
   }, []);
 
-  /* ---------- FILTER & PAGINATION ---------- */
+  /* ---------- FILTER ---------- */
   const filteredStreams = useMemo(() => {
     if (!query.trim()) return streams;
-    return streams.filter(s =>
+    return streams.filter((s) =>
       `${s.url} ${s.description}`.toLowerCase().includes(query.toLowerCase())
     );
   }, [streams, query]);
 
+  /* ---------- PAGINATION ---------- */
   useEffect(() => {
     setTotalPages(Math.max(1, Math.ceil(filteredStreams.length / ITEMS_PER_PAGE)));
     setCurrentPage(1);
@@ -79,53 +75,94 @@ const AdminPanel: React.FC = () => {
     return filteredStreams.slice(start, start + ITEMS_PER_PAGE);
   }, [filteredStreams, currentPage]);
 
+  const handlePageChange = (page: number) => {
+    if (page < 1 || page > totalPages) return;
+    setCurrentPage(page);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
   /* ---------- STREAM CRUD ---------- */
-  const handleCreateStream = async (payload: { url: string; description: string }) => {
-    const created = await adminApi.createStream(payload);
-    setStreams(prev => [created, ...prev]);
+  const handleCreateStream = async (payload: {
+    url: string;
+    description: string;
+    userIds: number[];
+  }) => {
+    const stream = await adminApi.createStream({
+      url: payload.url,
+      description: payload.description,
+    });
+
+    for (const userId of payload.userIds) {
+      await adminApi.createPermission({
+        user_id: userId,
+        stream_id: stream.id,
+        can_read: true,
+        can_update: true,
+      });
+    }
+
+    setStreams((prev) => [stream, ...prev]);
     setStreamModalOpen(false);
   };
 
   const handleUpdateStream = async (
     id: number,
-    payload: { url: string; description: string }
+    payload: {
+      url: string;
+      description: string;
+      userIds: number[];
+    }
   ) => {
-    const updated = await adminApi.updateStream(id, payload);
-    setStreams(prev => prev.map(s => (s.id === id ? updated : s)));
+    const updated = await adminApi.updateStream(id, {
+      url: payload.url,
+      description: payload.description,
+    });
+
+    await adminApi.deletePermissionsForStream(id);
+
+    for (const userId of payload.userIds) {
+      await adminApi.createPermission({
+        user_id: userId,
+        stream_id: id,
+        can_read: true,
+        can_update: true,
+      });
+    }
+
+    setStreams((prev) => prev.map((s) => (s.id === id ? updated : s)));
     setEditingStream(null);
     setStreamModalOpen(false);
   };
 
-  const handleDeleteStreamConfirmed = async (id: number) => {
+  const handleDeleteStream = async (id: number) => {
     await adminApi.deleteStream(id);
-    setStreams(prev => prev.filter(s => s.id !== id));
+    setStreams((prev) => prev.filter((s) => s.id !== id));
     setDeleteTarget(null);
   };
 
-  /* ---------- RENDER ---------- */
   if (loading) {
-    return <div className={styles.container}>Загрузка...</div>;
+    return <div className={styles.container}>Загрузка…</div>;
   }
 
+  /* ---------- RENDER ---------- */
   return (
     <div className={styles.container}>
       <div className={styles.tabs}>
         <button
-          className={`${styles.tab} ${activeTab === 'streams' ? styles.activeTab : ''}`}
-          onClick={() => setActiveTab('streams')}
+          className={activeTab === "streams" ? styles.activeTab : styles.tab}
+          onClick={() => setActiveTab("streams")}
         >
-          Потоки
+          Видеопотоки
         </button>
-
         <button
-          className={`${styles.tab} ${activeTab === 'users' ? styles.activeTab : ''}`}
-          onClick={() => setActiveTab('users')}
+          className={activeTab === "users" ? styles.activeTab : styles.tab}
+          onClick={() => setActiveTab("users")}
         >
           Пользователи
         </button>
       </div>
 
-      {activeTab === 'streams' && (
+      {activeTab === "streams" && (
         <>
           <div className={styles.controls}>
             <button
@@ -147,29 +184,52 @@ const AdminPanel: React.FC = () => {
 
           <StreamsTab
             streams={paginatedStreams}
-            onEdit={s => {
+            onEdit={(s) => {
               setEditingStream(s);
               setStreamModalOpen(true);
             }}
-            onDelete={s =>
+            onDelete={(s) =>
               setDeleteTarget({
-                type: 'stream',
+                type: "stream",
                 id: s.id,
                 label: s.description,
               })
             }
           />
+
+          {totalPages > 1 && (
+            <div className={styles.pagination}>
+              <button
+                onClick={() => handlePageChange(currentPage - 1)}
+                disabled={currentPage === 1}
+              >
+                ‹ Назад
+              </button>
+
+              <span>
+                {currentPage} / {totalPages}
+              </span>
+
+              <button
+                onClick={() => handlePageChange(currentPage + 1)}
+                disabled={currentPage === totalPages}
+              >
+                Дальше ›
+              </button>
+            </div>
+          )}
         </>
       )}
 
       {isStreamModalOpen && (
         <StreamModal
           stream={editingStream}
+          users={users}
           onClose={() => {
-            setStreamModalOpen(false);
             setEditingStream(null);
+            setStreamModalOpen(false);
           }}
-          onSubmit={payload =>
+          onSubmit={(payload) =>
             editingStream
               ? handleUpdateStream(editingStream.id, payload)
               : handleCreateStream(payload)
@@ -177,12 +237,12 @@ const AdminPanel: React.FC = () => {
         />
       )}
 
-      {deleteTarget && (
+      {deleteTarget && deleteTarget.type === "stream" && (
         <DeleteModal
-          type={deleteTarget.type}
+          type="stream"
           itemLabel={deleteTarget.label}
           onCancel={() => setDeleteTarget(null)}
-          onConfirm={() => handleDeleteStreamConfirmed(deleteTarget.id)}
+          onConfirm={() => handleDeleteStream(deleteTarget.id)}
         />
       )}
     </div>

@@ -26,8 +26,8 @@ const UsersAccessModal: React.FC<Props> = ({ title, address, userIds, allUsers, 
           <button className={styles.closeX} onClick={onClose}>✕</button>
         </div>
 
-        {address && <div className={styles.address}>{address}</div>}
-
+        {/* {address && <div className={styles.address}>{address}</div>} */}
+        <div className={styles.address}>Пользователи с доступом</div>
         <div className={styles.chipList}>
           {allUsers.map(u => {
             const isSelected = selected.includes(u.id);

@@ -31,7 +31,13 @@
   vertical-align: middle;
 }
 
-.streamRow:hover { background: #f8fafc; }
+.streamRow {
+  position: relative;
+}
+
+.streamRow:hover {
+  background: #f8fafc;
+}
 
 .rtspCell .rtspUrl {
   font-family: 'Courier New', monospace;

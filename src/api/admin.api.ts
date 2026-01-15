@@ -3,10 +3,6 @@ import type { Stream, AdminUser, UserForm } from "../types/Admin";
 import type { User } from "../types/User";
 import { mapUserToAdminUser } from "../mappers/admin.mappers";
 
-/* =========================
-   PAYLOADS
-========================= */
-
 export interface StreamPayload {
   url: string;
   description: string;
@@ -19,22 +15,23 @@ export interface PermissionPayload {
   can_update: boolean;
 }
 
-/* =========================
-   API
-========================= */
-
 export const adminApi = {
   /* ---------- USERS ---------- */
-
   async getUsers(): Promise<AdminUser[]> {
     const { data } = await api.get<User[]>("/api/v1/admin/users");
     return data.map(mapUserToAdminUser);
   },
 
-  async createUser(payload: UserForm): Promise<AdminUser> {
-    const { data } = await api.post<User>("/api/v1/admin/users", payload);
-    return mapUserToAdminUser(data);
+  async createUser(payload: UserForm & { role?: string }): Promise<AdminUser> {
+    console.log(payload)
+    const fullPayload = { ...payload, role: 'user' }; // на всякий случай
+    const { data } = await api.post<{ message: string; user: User }>("/api/v1/users", fullPayload);
+    return mapUserToAdminUser(data.user);
   },
+
+
+
+
 
   async updateUser(
     id: number,

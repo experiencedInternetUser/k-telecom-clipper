@@ -39,7 +39,11 @@ export interface NewStreamForm {
 
 
 export interface UserForm {
-  login: string;
-  password: string;
+  first_name: string;
+  last_name: string;
+  patronymic?: string;
   email: string;
+  password: string;
+  role: string;
 }
+

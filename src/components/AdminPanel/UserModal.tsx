@@ -1,15 +1,17 @@
 import React, { useEffect, useRef, useState } from 'react';
 import styles from './UserModal.module.css';
-import type { User, UserForm } from '../../types/Admin';
+import type { UserForm } from '../../types/Admin';
 
 interface Props {
-  user?: User | null;
+  user?: any | null;
   onClose: () => void;
   onSubmit: (payload: UserForm) => void;
 }
 
 const UserModal: React.FC<Props> = ({ user = null, onClose, onSubmit }) => {
-  const [login, setLogin] = useState(user?.login ?? '');
+  const [firstName, setFirstName] = useState(user?.first_name ?? '');
+  const [lastName, setLastName] = useState(user?.last_name ?? '');
+  const [patronymic, setPatronymic] = useState(user?.patronymic ?? '');
   const [email, setEmail] = useState(user?.email ?? '');
   const [password, setPassword] = useState('');
   const inputRef = useRef<HTMLInputElement | null>(null);
@@ -18,7 +20,14 @@ const UserModal: React.FC<Props> = ({ user = null, onClose, onSubmit }) => {
 
   const handleSubmit = (e?: React.FormEvent) => {
     e?.preventDefault();
-    onSubmit({ login: login.trim(), password, email: email.trim() });
+    onSubmit({
+      first_name: firstName.trim(),
+      last_name: lastName.trim(),
+      patronymic: patronymic.trim(),
+      email: email.trim(),
+      password,
+      role: 'user'
+    });
   };
 
   return (
@@ -30,14 +39,20 @@ const UserModal: React.FC<Props> = ({ user = null, onClose, onSubmit }) => {
         </div>
 
         <form className={styles.form} onSubmit={handleSubmit}>
-          <label>Логин</label>
-          <input ref={inputRef} value={login} onChange={e => setLogin(e.target.value)} required />
+          <label>Имя</label>
+          <input ref={inputRef} value={firstName} onChange={e => setFirstName(e.target.value)} required />
+
+          <label>Фамилия</label>
+          <input value={lastName} onChange={e => setLastName(e.target.value)} required />
+
+          <label>Отчество</label>
+          <input value={patronymic} onChange={e => setPatronymic(e.target.value)} />
 
           <label>Email</label>
-          <input value={email} onChange={e => setEmail(e.target.value)} />
+          <input value={email} onChange={e => setEmail(e.target.value)} required />
 
           <label>Пароль</label>
-          <input type="password" value={password} onChange={e => setPassword(e.target.value)} />
+          <input type="password" value={password} onChange={e => setPassword(e.target.value)} required />
 
           <div className={styles.actions}>
             <button type="button" className={styles.cancelBtn} onClick={onClose}>Отмена</button>

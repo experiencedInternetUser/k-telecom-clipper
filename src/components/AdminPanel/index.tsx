@@ -1,3 +1,40 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
+// --------- DIAGNOSTIC HELPERS ----------
+const filterPermissionsForStream = (perms: any[], streamId: number) => {
+  if (!Array.isArray(perms)) return [];
+  const filtered = perms.filter(p => Number(p.stream_id) === Number(streamId) || Number(p.stream_id) === streamId);
+  return filtered;
+};
+
+const logSharedUserReferences = (streamsToCheck: any[], label = '') => {
+  try {
+    const refs: { userId: string; streams: number[] }[] = [];
+    for (let i = 0; i < streamsToCheck.length; i++) {
+      for (let j = i + 1; j < streamsToCheck.length; j++) {
+        (streamsToCheck[i].users || []).forEach((u1: any) => {
+          (streamsToCheck[j].users || []).forEach((u2: any) => {
+            if (u1 === u2) {
+              const found = refs.find(r => r.userId === u1.id);
+              if (found) {
+                if (!found.streams.includes(streamsToCheck[i].id)) found.streams.push(streamsToCheck[i].id);
+                if (!found.streams.includes(streamsToCheck[j].id)) found.streams.push(streamsToCheck[j].id);
+              } else {
+                refs.push({ userId: u1.id, streams: [streamsToCheck[i].id, streamsToCheck[j].id] });
+              }
+            }
+          });
+        });
+      }
+    }
+    console.log(`DIAG${label}: shared reference users across streams (should be empty):`, refs);
+  } catch (err) {
+    console.warn('logSharedUserReferences error', err);
+  }
+};
+// ---------------------------------------
+
+
 // src/components/AdminPanel/index.tsx
 import { useEffect, useMemo, useState } from "react";
 import styles from "./AdminPanel.module.css";
@@ -10,6 +47,7 @@ import DeleteModal from "./DeleteModal";
 import SearchBar from "./SearchBar";
 
 import { adminApi, createPermission, deletePermission, getPermissionsForStream } from "../../api/admin.api";
+import UserModal from "./UserModal";
 
 const ITEMS_PER_PAGE = 10;
 
@@ -18,52 +56,6 @@ type DeleteTarget = {
   id: number;
   label?: string;
 };
-
-// --------- DIAGNOSTIC HELPERS ----------
-const filterPermissionsForStream = (perms: any[], streamId: number) => {
-  if (!Array.isArray(perms)) return [];
-  const filtered = perms.filter(
-    (p) =>
-      Number(p.stream_id) === Number(streamId) ||
-      Number(p.stream_id) === streamId
-  );
-  return filtered;
-};
-
-const logSharedUserReferences = (streamsToCheck: any[], label = "") => {
-  try {
-    const refs: { userId: string; streams: number[] }[] = [];
-    for (let i = 0; i < streamsToCheck.length; i++) {
-      for (let j = i + 1; j < streamsToCheck.length; j++) {
-        (streamsToCheck[i].users || []).forEach((u1: any) => {
-          (streamsToCheck[j].users || []).forEach((u2: any) => {
-            if (u1 === u2) {
-              const found = refs.find((r) => r.userId === u1.id);
-              if (found) {
-                if (!found.streams.includes(streamsToCheck[i].id))
-                  found.streams.push(streamsToCheck[i].id);
-                if (!found.streams.includes(streamsToCheck[j].id))
-                  found.streams.push(streamsToCheck[j].id);
-              } else {
-                refs.push({
-                  userId: u1.id,
-                  streams: [streamsToCheck[i].id, streamsToCheck[j].id],
-                });
-              }
-            }
-          });
-        });
-      }
-    }
-    console.log(
-      `DIAG${label}: shared reference users across streams (should be empty):`,
-      refs
-    );
-  } catch (err) {
-    console.warn("logSharedUserReferences error", err);
-  }
-};
-// ---------------------------------------
 
 const AdminPanel = () => {
   const [activeTab, setActiveTab] = useState<"streams" | "users">("streams");
@@ -79,6 +71,7 @@ const AdminPanel = () => {
 
   const [editingStream, setEditingStream] = useState<StreamWithUsers | null>(null);
   const [isStreamModalOpen, setStreamModalOpen] = useState(false);
+  const [isUserModalOpen, setUserModalOpen] = useState(false);
 
   const [deleteTarget, setDeleteTarget] = useState<DeleteTarget | null>(null);
 
@@ -102,7 +95,7 @@ const AdminPanel = () => {
 
   const buildStreamWithUsers = (stream: Stream, userIds: number[], globalUsers: AdminUser[]): StreamWithUsers => {
     const clonedUsers = userIds
-      .map((uid) => {
+      .map(uid => {
         const u = globalUsers.find((x) => Number(x.id) === uid);
         return u ? { ...u } : null;
       })
@@ -125,32 +118,29 @@ const AdminPanel = () => {
 
         const streamsWithUsers: StreamWithUsers[] = await Promise.all(
           streamsRes.map(async (stream) => {
-            const { data: permissionsRaw } = await getPermissionsForStream(stream.id);
+// внутри streamsRes.map(async (stream) => { ... })
+const { data: permissionsRaw } = await getPermissionsForStream(stream.id);
 
-            // DEBUG: логируем "сырые" permissions и их stream_id'ы
-            console.log(`PERMS RAW for stream ${stream.id}:`, permissionsRaw);
+// DEBUG: логируем "сырые" permissions и их stream_id'ы
+console.log(`PERMS RAW for stream ${stream.id}:`, permissionsRaw);
 
-            // Фильтруем по stream_id (защита от бекенд-ошибок)
-            const permissions = filterPermissionsForStream(
-              Array.isArray(permissionsRaw) ? permissionsRaw : permissionsRaw?.data ?? [],
-              stream.id
-            );
+// Фильтруем по stream_id (защита от бекенд-ошибок)
+const permissions = filterPermissionsForStream(Array.isArray(permissionsRaw) ? permissionsRaw : permissionsRaw?.data ?? [], stream.id);
 
-            console.log(
-              `PERMS FILTERED for stream ${stream.id}:`,
-              permissions.map((p: any) => ({ id: p.id, user_id: p.user_id, stream_id: p.stream_id }))
-            );
+console.log(`PERMS FILTERED for stream ${stream.id}:`, permissions.map((p:any) => ({ id: p.id, user_id: p.user_id, stream_id: p.stream_id })));
 
-            const userIds = permissions.map((p: any) => Number(p.user_id));
+// собираем айдишники пользователей
+const userIds = permissions.map((p: any) => Number(p.user_id));
 
-            const streamUsers = usersCloned
-              .filter((u) => userIds.includes(Number(u.id)))
-              .map((u) => ({ ...u })); // обязательно клонируем объекты пользователей
+const streamUsers = usersCloned
+  .filter((u) => userIds.includes(Number(u.id)))
+  .map((u) => ({ ...u })); // обязательно клонируем объекты пользователей
 
-            return {
-              ...stream,
-              users: streamUsers,
-            };
+return {
+  ...stream,
+  users: streamUsers,
+};
+
           })
         );
 
@@ -170,11 +160,6 @@ const AdminPanel = () => {
           assignedStreams: assignedMap.get(u.id) ?? [],
         }));
 
-        // DEBUG: check shared refs after load
-        logSharedUserReferences(streamsWithUsers, " (after load)");
-        console.log("LOAD: streamsWithUsers (ids & userIds):", streamsWithUsers.map(s => ({ id: s.id, userIds: (s.users||[]).map(u=>u.id) })));
-        console.log("LOAD: usersWithAssigned sample:", usersWithAssigned.slice(0, 20));
-
         setStreams(streamsWithUsers);
         setUsers(usersWithAssigned);
       } catch (e) {
@@ -183,7 +168,6 @@ const AdminPanel = () => {
         setLoading(false);
       }
     };
-
     load();
   }, []);
 
@@ -211,6 +195,17 @@ const AdminPanel = () => {
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
+  // -------------------- CREATE USER HANDLER --------------------
+  const handleCreateUser = async (payload: { login: string; email: string; password: string }) => {
+    try {
+      const newUser = await adminApi.createUser(payload); // используем API
+      setUsers(prev => [...prev, { ...newUser, assignedStreams: [] }]);
+      setUserModalOpen(false);
+    } catch (err) {
+      console.error("Ошибка при создании пользователя:", err);
+    }
+  };
+
   // -------------------- STREAM CRUD --------------------
   const handleCreateStream = async (data: NewStreamForm) => {
     const stream = await adminApi.createStream({ url: data.url, description: data.description });
@@ -222,16 +217,8 @@ const AdminPanel = () => {
 
     const streamWithUsers = buildStreamWithUsers(stream, userIds, users);
 
-    // DEBUG:
-    console.log("CREATE: new stream:", stream);
-    console.log("CREATE: assigned userIds:", userIds);
-    console.log("CREATE: streamWithUsers.userIds:", streamWithUsers.users.map(u => u.id));
-
-    setStreams((prev) => [streamWithUsers, ...prev.map(s => ({ ...s, users: (s.users ?? []).map(u => ({ ...u })) }))]);
+    setStreams((prev) => [streamWithUsers, ...prev.map(s => ({ ...s, users: s.users.map(u => ({ ...u })) }))]);
     if (userIds.length > 0) applyAssignedStreamsForStream(stream.id, userIds);
-
-    // small diagnostic after update (can't inspect state immediately, but log constructed)
-    logSharedUserReferences([streamWithUsers, ...streams], " (after create attempt)");
 
     setStreamModalOpen(false);
   };
@@ -239,41 +226,31 @@ const AdminPanel = () => {
   const handleUpdateStream = async (streamId: number, data: NewStreamForm) => {
     await adminApi.updateStream(streamId, { url: data.url, description: data.description });
 
-    // fetch current permissions for this stream and filter them
     const { data: permissionsRaw } = await getPermissionsForStream(streamId);
-    console.log("UPDATE PERMS RAW for stream", streamId, permissionsRaw);
+console.log('UPDATE PERMS RAW for stream', streamId, permissionsRaw);
 
-    const permissionsForThisStream = filterPermissionsForStream(
-      Array.isArray(permissionsRaw) ? permissionsRaw : permissionsRaw?.data ?? [],
-      streamId
-    );
+const permissionsForThisStream = filterPermissionsForStream(Array.isArray(permissionsRaw) ? permissionsRaw : permissionsRaw?.data ?? [], streamId);
 
-    console.log("UPDATE PERMS FILTERED for stream", streamId, permissionsForThisStream.map((p: any) => ({ id: p.id, user_id: p.user_id, stream_id: p.stream_id })));
+console.log('UPDATE PERMS FILTERED for stream', streamId, permissionsForThisStream.map((p:any)=>({id:p.id,user_id:p.user_id,stream_id:p.stream_id})));
 
-    if (permissionsForThisStream.length > 0) {
-      await Promise.all(permissionsForThisStream.map((p: any) => deletePermission(p.id)));
-    }
+if (permissionsForThisStream.length > 0) {
+  await Promise.all(permissionsForThisStream.map((p: any) => deletePermission(p.id)));
+}
+
+    await Promise.all(permissions.map((p: any) => deletePermission(p.id)));
 
     const newUserIds = Array.isArray(data.userIds) ? data.userIds : [];
-    if (newUserIds.length > 0) {
-      await Promise.all(newUserIds.map((uid) => createPermission({ user_id: uid, stream_id: streamId })));
-    }
+    await Promise.all(newUserIds.map((uid) => createPermission({ user_id: uid, stream_id: streamId })));
 
-    setStreams((prev) => {
-      const newStreams = prev.map((s) => {
-        const clonedUsers = (s.users ?? []).map((u) => ({ ...u }));
+    setStreams((prev) =>
+      prev.map((s) => {
+        const clonedUsers = (s.users ?? []).map(u => ({ ...u }));
         if (s.id !== streamId) return { ...s, users: clonedUsers };
 
-        const updatedUsers = users.filter((u) => newUserIds.includes(Number(u.id))).map((u) => ({ ...u }));
+        const updatedUsers = users.filter((u) => newUserIds.includes(Number(u.id))).map(u => ({ ...u }));
         return { ...s, url: data.url, description: data.description, users: updatedUsers };
-      });
-
-      // DEBUG: log snapshot & shared refs
-      console.log("UPDATE: newStreams snapshot (ids & userIds):", newStreams.map(s => ({ id: s.id, userIds: (s.users||[]).map(u=>u.id) })));
-      logSharedUserReferences(newStreams, " (after update)");
-
-      return newStreams;
-    });
+      })
+    );
 
     applyAssignedStreamsForStream(streamId, newUserIds);
     setEditingStream(null);
@@ -284,73 +261,47 @@ const AdminPanel = () => {
     await adminApi.deleteStream(id);
     setStreams((prev) => prev.filter((s) => s.id !== id));
     setUsers((prev) =>
-      prev.map((u) => ({ ...u, assignedStreams: (u.assignedStreams ?? []).filter((x) => x !== String(id)) }))
+      prev.map((u) => ({ ...u, assignedStreams: (u.assignedStreams ?? []).filter(x => x !== String(id)) }))
     );
     setDeleteTarget(null);
   };
 
   // -------------------- ASSIGN USERS --------------------
   const handleAssign = async (userId: string, newAssigned: string[]) => {
-    const prevUser = users.find((u) => u.id === userId);
+    const prevUser = users.find(u => u.id === userId);
     const prevAssigned = prevUser?.assignedStreams ?? [];
 
-    const toAdd = newAssigned.filter((id) => !prevAssigned.includes(id));
-    const toRemove = prevAssigned.filter((id) => !newAssigned.includes(id));
+    const toAdd = newAssigned.filter(id => !prevAssigned.includes(id));
+    const toRemove = prevAssigned.filter(id => !newAssigned.includes(id));
 
-    console.log("ASSIGN START:", { userId, prevAssigned, newAssigned, toAdd, toRemove });
+    await Promise.all(toAdd.map((sid) => createPermission({ user_id: Number(userId), stream_id: Number(sid) })));
+    await Promise.all(toRemove.map(async (sid) => {
+      const { data: perms } = await getPermissionsForStream(Number(sid));
+      const perm = perms.find((p: any) => p.user_id === Number(userId));
+      if (perm) await deletePermission(perm.id);
+    }));
 
-    // Создать permissions для добавленных
-    await Promise.all(
-      toAdd.map((sid) =>
-        createPermission({ user_id: Number(userId), stream_id: Number(sid) })
-      )
-    );
-
-    // Удалить permissions для удалённых (с фильтрацией)
-    await Promise.all(
-      toRemove.map(async (sid) => {
-        const { data: permsRaw } = await getPermissionsForStream(Number(sid));
-        console.log("ASSIGN: PERMS RAW for sid", sid, permsRaw);
-
-        const perms = filterPermissionsForStream(Array.isArray(permsRaw) ? permsRaw : permsRaw?.data ?? [], Number(sid));
-        console.log("ASSIGN: PERMS FILTERED for sid", sid, perms);
-
-        const perm = perms.find((p: any) => Number(p.user_id) === Number(userId));
-        if (perm) {
-          await deletePermission(perm.id);
-        }
-      })
-    );
-
-    // Обновляем локальный users.assignedStreams
     setUsers((prev) => prev.map((u) => (u.id === userId ? { ...u, assignedStreams: [...newAssigned] } : u)));
-
-    // Обновляем streams: добавляем/удаляем клонированного пользователя в соответствующие потоки
-    setStreams((prev) => {
-      const newStreams = prev.map((s) => {
+    
+    setStreams((prev) =>
+      prev.map((s) => {
         const sid = String(s.id);
-        let cur = (s.users ?? []).map((u) => ({ ...u }));
+        let cur = (s.users ?? []).map(u => ({ ...u }));
 
         if (toAdd.includes(sid)) {
-          const u = users.find((x) => x.id === userId);
-          if (u && !cur.some((x) => x.id === userId)) cur = [...cur, { ...u }];
+          const u = users.find(x => x.id === userId);
+          if (u && !cur.some(x => x.id === userId)) cur = [...cur, { ...u }];
           return { ...s, users: cur };
         }
 
         if (toRemove.includes(sid)) {
-          cur = cur.filter((x) => x.id !== userId).map((x) => ({ ...x }));
+          cur = cur.filter(x => x.id !== userId).map(x => ({ ...x }));
           return { ...s, users: cur };
         }
 
         return { ...s, users: cur };
-      });
-
-      // DEBUG:
-      console.log("ASSIGN: newStreams after assign (ids & userIds):", newStreams.map(s => ({ id: s.id, userIds: (s.users||[]).map(u=>u.id) })));
-      logSharedUserReferences(newStreams, " (after assign)");
-
-      return newStreams;
-    });
+      })
+    );
   };
 
   if (loading) return <div className={styles.container}>Загрузка…</div>;
@@ -384,16 +335,34 @@ const AdminPanel = () => {
           )}
         </>
       )}
-
       {activeTab === "users" && (
-        <UsersTab
-          users={users}
-          streams={streams}
-          onSelectUser={() => {}}
-          onEdit={() => {}}
-          onDelete={() => {}}
-          onAssign={handleAssign}
-        />
+        <>
+          <div className={styles.controls}>
+            <button
+              className={styles.createButton}
+              onClick={() => setUserModalOpen(true)}
+            >
+              Добавить пользователя +
+            </button>
+          </div>
+
+          <UsersTab
+            users={users}
+            streams={streams}
+            onSelectUser={() => {}}
+            onEdit={() => {}}
+            onDelete={() => {}}
+            onAssign={handleAssign}
+          />
+
+          {isUserModalOpen && (
+            <UserModal
+              user={null} // создание нового
+              onClose={() => setUserModalOpen(false)}
+              onSubmit={handleCreateUser}
+            />
+          )}
+        </>
       )}
 
       {isStreamModalOpen && (

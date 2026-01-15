@@ -6,6 +6,6 @@
 .form { display:flex; flex-direction:column; gap:10px; }
 .form label { font-weight:600; color:#111827; }
 .form input { padding:10px 12px; border-radius:8px; border:1px solid #E6E9EE; }
-.actions { display:flex; justify-content:flex-end; gap:10px; margin-top:8px; }
-.cancelBtn { background:#fff; border:1px solid #E6E9EE; padding:8px 12px; border-radius:8px; color:#6b7280; font-weight:700; }
-.submitBtn { background:#C8235A; border:none; padding:8px 12px; border-radius:8px; color:#fff; font-weight:700; }
+.actions { display:flex; justify-content:space-between; gap:10px; margin-top:8px; }
+.cancelBtn { background:#fff; border:1px solid #E6E9EE; padding:8px 12px; border-radius:8px; color:#6b7280; font-weight:700; width: 15em; }
+.submitBtn { background:#C8235A; border:none; padding:8px 12px; border-radius:8px; color:#fff; font-weight:700; width: 15em; }

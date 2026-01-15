@@ -40,8 +40,8 @@ const DomofonList = () => {
 
   const handleSelect = (s: Stream) => {
     navigate('/video', {
-      state: { streamId: s.id }
-    });
+    state: { streamId: s.id, description: s.description }
+  });
   };
 
   const handlePageChange = (page: number) => {

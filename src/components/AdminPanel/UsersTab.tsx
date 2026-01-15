@@ -134,8 +134,8 @@ const UsersTab: React.FC<Props> = ({ users, streams, selectedUserId = null, onSe
           <table className={styles.streamsTable}>
             <thead>
               <tr>
-                <th className={styles.rtspHeader}>URL потока</th>
-                <th className={styles.addressHeader}>Описание</th>
+                <th className={styles.rtspHeader}>RTSP-адрес потока</th>
+                <th className={styles.addressHeader}>Адрес камеры</th>
                 <th className={styles.accessHeader}>Доступ</th>
               </tr>
             </thead>

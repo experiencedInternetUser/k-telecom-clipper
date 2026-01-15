@@ -17,9 +17,9 @@ const StreamsTab: React.FC<Props> = ({ streams, onEdit, onDelete }) => {
         <table className={styles.streamsTable}>
           <thead>
             <tr>
-              <th>URL потока</th>
-              <th>Описание</th>
-              <th>Пользователи</th>
+              <th>RTSP-адрес потока</th>
+              <th>Адрес камеры</th>
+              <th>Доступно пользователям</th>
               <th />
             </tr>
           </thead>

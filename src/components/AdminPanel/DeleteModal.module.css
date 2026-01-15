@@ -3,8 +3,8 @@
 .body { padding:18px 20px; }
 .title { margin:0 0 8px 0; font-size:1.05rem; font-weight:700; color:#020617; }
 .message { margin:0 0 18px 0; color:#64748B; font-size:0.95rem; line-height:1.4; }
-.actions { display:flex; gap:12px; justify-content:flex-end; align-items:center; }
-.cancel { background:#fff; color:#C8235A; border:1px solid #E6E9EE; padding:10px 16px; border-radius:8px; font-weight:700; cursor:pointer; }
-.confirm { background:#C8235A; color:#fff; border:none; padding:10px 16px; border-radius:8px; font-weight:700; cursor:pointer; box-shadow:0 6px 18px rgba(200,35,90,0.18); }
+.actions { display:flex; gap:12px; justify-content:space-between; align-items:center; }
+.cancel { background:#fff; color:#C8235A; border:1px solid #E6E9EE; padding:10px 16px; border-radius:8px; font-weight:700; cursor:pointer; width: 12em;}
+.confirm { background:#C8235A; color:#fff; border:none; padding:10px 16px; border-radius:8px; font-weight:700; cursor:pointer; box-shadow:0 6px 18px rgba(200,35,90,0.18); width: 12em}
 .cancel:hover { transform: translateY(-1px); } .confirm:hover { filter:brightness(0.95); transform: translateY(-1px); }
 @media (max-width:480px) { .modal { max-width:94%; } .actions{ flex-direction:column-reverse; } .confirm, .cancel { width:100%; } }

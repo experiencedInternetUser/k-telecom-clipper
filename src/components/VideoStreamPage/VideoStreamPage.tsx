@@ -11,15 +11,16 @@ interface Backend {
   description: string;
 }
 
-const LINE_WIDTH = 1.2;   // тонкость линии (CSS-пиксели)
-const POINT_RADIUS = 3.0; // радиус точки (CSS-пиксели)
+const LINE_WIDTH = 1.2;   // толщина линии в CSS-пикселях
+const POINT_RADIUS = 3.0; // радиус точки в CSS-пикселях
 
 const VideoStreamPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
   const streamId = (location.state as { streamId: number } | null)?.streamId ?? null;
-
+  const streamDescription = (location.state as { description: string } | null)?.description ?? null;
+  
   const containerRef = useRef<HTMLDivElement | null>(null);
   const videoRef = useRef<HTMLDivElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -44,7 +45,6 @@ const VideoStreamPage = () => {
     const loadStream = async () => {
       try {
         const res = await api.get(`/api/v1/streams/${streamId}`);
-        // backend may return different field names; adjust if needed
         setStreamUrl(res.data.stream_url ?? res.data.url ?? null);
       } catch (e) {
         console.error('Ошибка загрузки стрима', e);
@@ -84,7 +84,7 @@ const VideoStreamPage = () => {
       const rect = videoEl.getBoundingClientRect();
       const dpr = window.devicePixelRatio || 1;
 
-      // Reset transform to avoid accumulating scales
+      // Reset transform before resizing
       ctx.setTransform(1, 0, 0, 1, 0, 0);
 
       canvas.width = Math.max(1, Math.round(rect.width * dpr));
@@ -92,23 +92,18 @@ const VideoStreamPage = () => {
       canvas.style.width = `${rect.width}px`;
       canvas.style.height = `${rect.height}px`;
 
-      // scale so we can draw in CSS pixels
+      // scale to CSS pixels
       ctx.scale(dpr, dpr);
 
-      // redraw current polygon after resize
+      // redraw
       drawPolygon();
     };
 
-    // Initial resize
+    // initial
     resizeCanvas();
 
-    // ResizeObserver to track layout changes of the video div
-    const ro = new ResizeObserver(() => {
-      resizeCanvas();
-    });
+    const ro = new ResizeObserver(() => resizeCanvas());
     ro.observe(videoEl);
-
-    // also window resize fallback
     window.addEventListener('resize', resizeCanvas);
 
     return () => {
@@ -116,7 +111,7 @@ const VideoStreamPage = () => {
       window.removeEventListener('resize', resizeCanvas);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [videoRef.current, canvasRef.current, polygon.length]); // polygon.length to trigger on mount/changes
+  }, [videoRef.current, canvasRef.current]);
 
   /* ---------- DRAW POLYGON FUNCTION ---------- */
   const drawPolygon = () => {
@@ -125,15 +120,10 @@ const VideoStreamPage = () => {
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    // Use CSS width/height for clearing & drawing (we scaled context to dpr already)
     const cssW = canvas.clientWidth || parseFloat(canvas.style.width || '0') || 0;
     const cssH = canvas.clientHeight || parseFloat(canvas.style.height || '0') || 0;
-    if (cssW === 0 || cssH === 0) {
-      // nothing to draw yet
-      return;
-    }
+    if (cssW === 0 || cssH === 0) return;
 
-    // clear in CSS pixels (context is scaled)
     ctx.clearRect(0, 0, cssW, cssH);
 
     if (polygon.length === 0) return;
@@ -147,9 +137,7 @@ const VideoStreamPage = () => {
 
     ctx.beginPath();
     ctx.moveTo(polygon[0].x, polygon[0].y);
-    for (let i = 1; i < polygon.length; i++) {
-      ctx.lineTo(polygon[i].x, polygon[i].y);
-    }
+    for (let i = 1; i < polygon.length; i++) ctx.lineTo(polygon[i].x, polygon[i].y);
 
     if (polygon.length >= 3) {
       ctx.closePath();
@@ -157,7 +145,6 @@ const VideoStreamPage = () => {
     }
     ctx.stroke();
 
-    // draw points
     for (const p of polygon) {
       ctx.beginPath();
       ctx.arc(p.x, p.y, POINT_RADIUS, 0, Math.PI * 2);
@@ -168,7 +155,6 @@ const VideoStreamPage = () => {
     ctx.restore();
   };
 
-  /* Call draw whenever polygon changes */
   useEffect(() => {
     drawPolygon();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -178,15 +164,12 @@ const VideoStreamPage = () => {
   const handleCanvasClick = (e: React.MouseEvent<HTMLCanvasElement>) => {
     const canvas = canvasRef.current;
     if (!canvas) return;
-
-    // bounding rect in CSS pixels
     const rect = canvas.getBoundingClientRect();
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
 
-    // push CSS-pixel coordinates (we draw with ctx.scale(dpr,dpr) so these match)
     setPolygon(prev => {
-      setRedoStack([]); // clear redo when adding
+      setRedoStack([]);
       return [...prev, { x, y }];
     });
   };
@@ -212,20 +195,32 @@ const VideoStreamPage = () => {
   };
 
   const handleSave = async () => {
-    if (!selectedBackendId || polygon.length < 3 || !streamId) return;
+    if (!selectedBackendId || polygon.length < 3 || !streamId) {
+      alert('Выберите бекенд и отметьте как минимум 3 точки.');
+      return;
+    }
+
+    const payload = {
+      backend_id: selectedBackendId,
+      stream_id: streamId,
+      selection: polygon.map(p => ({ x: Math.round(p.x), y: Math.round(p.y) })),
+      description: '',
+      pushed_to_backend: false, // заглушка
+    };
+
     try {
-      await api.post('/api/v1/selections', {
-        backend_id: selectedBackendId,
-        stream_id: streamId,
-        points: polygon,
-      });
+      const res = await api.post('/api/v1/selections', payload);
+      const data = res?.data;
+      console.log('Selection saved response:', data);
+
       alert('Область успешно сохранена');
-      // optionally clear
+
       setPolygon([]);
       setRedoStack([]);
-    } catch (e) {
-      console.error('Ошибка сохранения области', e);
-      alert('Ошибка при сохранении');
+    } catch (err) {
+      console.error('Ошибка при сохранении выделения', err);
+      const msg = (err as any)?.response?.data?.message ?? 'Ошибка при сохранении на сервере';
+      alert(msg);
     }
   };
 
@@ -247,13 +242,13 @@ const VideoStreamPage = () => {
   return (
     <div className={styles.container} ref={containerRef}>
       <div className={styles.header}>
-        <h1>Видеопоток #{streamId ?? '—'}</h1>
+        <h1>{streamDescription ?? 'Название видеопотока отсутствует'}</h1>
       </div>
 
       <div className={styles.instructions}>
         <div className={styles.instructionsText}>
           <p className={styles.instructionPrimary}>Выделите нужную область</p>
-          <p className={styles.instructionSecondary}>Многоугольник из трёх и более точек</p>
+          <p className={styles.instructionSecondary}>Создайте многоугольник из трёх или более точек</p>
         </div>
 
         <div className={styles.instrButtons}>
@@ -273,7 +268,6 @@ const VideoStreamPage = () => {
           style={!streamUrl ? { backgroundColor: '#f1f5f9' } : undefined}
         >
           {streamUrl ? (
-            // video element under the canvas (canvas will be absolutely positioned on top)
             <video src={streamUrl} autoPlay muted playsInline className={styles.video} />
           ) : (
             <div
@@ -295,12 +289,10 @@ const VideoStreamPage = () => {
             </div>
           )}
 
-          {/* canvas placed above video and receives clicks */}
           <canvas
             ref={canvasRef}
             className={styles.drawingCanvas}
             onClick={handleCanvasClick}
-            // override CSS to ensure canvas receives pointer events and is above video
             style={{ pointerEvents: 'auto', zIndex: 2 }}
           />
         </div>

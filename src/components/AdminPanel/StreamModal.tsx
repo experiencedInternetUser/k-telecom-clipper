@@ -44,11 +44,11 @@ const StreamModal = ({ stream, users, onClose, onSubmit }: Props) => {
     <>
       <div className={styles.modalOverlay}>
         <div className={styles.modal}>
-          <h2 style={{paddingBottom: '10px'}}>{stream ? "Редактировать поток" : "Создать поток"}</h2>
+          <h2 style={{paddingBottom: '10px'}}>{stream ? "Изменение данных видеопотока" : "Добавление видеопотока в базу"}</h2>
 
           <form onSubmit={handleSubmit}>
             <label >
-              <div style={{paddingBottom: '10px'}}>URL потока</div>
+              <div style={{paddingBottom: '10px'}}>RTSP-адрес</div>
               <input
                 value={url}
                 onChange={(e) => setUrl(e.target.value)}
@@ -74,11 +74,11 @@ const StreamModal = ({ stream, users, onClose, onSubmit }: Props) => {
             </button>
 
             <div className={styles.actions}>
-              <button type="button" onClick={onClose}>
+              <button type="button" onClick={onClose} style={{width: '15em'}}>
                 Отмена
               </button>
-              <button type="submit" className={styles.submitButton}>
-                Сохранить
+              <button type="submit" className={styles.submitButton} style={{width: '15em'}}>
+                {stream ? "Сохранить" : "Добавить"}
               </button>
             </div>
           </form>

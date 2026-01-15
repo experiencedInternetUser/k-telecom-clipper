@@ -240,7 +240,7 @@ const AdminPanel = () => {
             <button className={styles.createButton} onClick={() => { setEditingStream(null); setStreamModalOpen(true); }}>
               Создать поток +
             </button>
-            <SearchBar value={query} onChange={setQuery} placeholder="Поиск потоков" />
+            <SearchBar value={query} onChange={setQuery} placeholder="Поиск видеопотоков" />
           </div>
 
           <StreamsTab
@@ -264,7 +264,7 @@ const AdminPanel = () => {
           <div className={styles.controls}>
             <div className={styles.controlsLeft}>
               <button className={styles.createUserButton} onClick={() => setUserModalOpen(true)}>
-                Добавить пользователя +
+                Создать пользователя +
               </button>
             </div>
             <div className={styles.controlsRight}>

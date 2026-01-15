@@ -46,10 +46,6 @@ const LoginForm: React.FC = () => {
       });
 
       localStorage.setItem('isAuthenticated', 'true');
-      // localStorage.setItem(
-      //   'isAdmin',
-      //   res.user.role === 'admin' ? 'true' : 'false'
-      // );
 
       if (res.user.role === 'admin') {
         navigate('/admin', { replace: true });
@@ -122,9 +118,6 @@ const LoginForm: React.FC = () => {
         </button>
 
         <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
-          {/* <button type="button" onClick={handleAdminLogin} disabled={isLoading}>
-            Войти как админ
-          </button> */}
         </div>
       </form>
     </div>

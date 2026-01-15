@@ -1,4 +1,3 @@
-// src/components/AdminPanel/UsersTab.tsx
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import styles from './UsersTab.module.css';
 import type { Stream, AdminUser } from '../../types/Admin';
@@ -22,35 +21,26 @@ const UsersTab: React.FC<Props> = ({ users, streams, selectedUserId = null, onSe
   const [currentPage, setCurrentPage] = useState<number>(1);
   const [totalPages, setTotalPages] = useState<number>(1);
 
-  // Синхронизация: когда проп selectedUserId приходит — устанавливаем локально (один источник)
   useEffect(() => {
-    if (selectedUserId !== undefined && selectedUserId !== null && selectedUserId !== localSelected) {
+    if (selectedUserId && selectedUserId !== localSelected) {
       setLocalSelected(selectedUserId);
     }
-    // слушаем только selectedUserId — не localSelected, чтобы не создавать петлю
   }, [selectedUserId]);
 
-  // Первый раз после загрузки users: если ничего не выбрано — выберем первого.
-  // Используем ref, чтобы выполнить этот блок только один раз при появлении users.
   useEffect(() => {
     if (!initializedRef.current && users.length > 0) {
       initializedRef.current = true;
-
       if (!localSelected) {
         setLocalSelected(users[0].id);
         onSelectUser?.(users[0].id);
       }
     }
-    // зависим от users и onSelectUser, но НЕ от localSelected (чтобы не зациклиться)
   }, [users, onSelectUser]);
 
-  // pagination: пересчитываем totalPages при изменении streams
   useEffect(() => {
     const tp = Math.max(1, Math.ceil(streams.length / ITEMS_PER_PAGE));
     setTotalPages(tp);
-    if (currentPage > tp) {
-      setCurrentPage(tp);
-    }
+    if (currentPage > tp) setCurrentPage(tp);
   }, [streams, currentPage]);
 
   const selectedUser = useMemo(() => users.find(u => u.id === localSelected) ?? null, [users, localSelected]);
@@ -63,8 +53,7 @@ const UsersTab: React.FC<Props> = ({ users, streams, selectedUserId = null, onSe
   const handleToggleAccess = (streamId: string) => {
     if (!selectedUser) return;
     const prevAssigned = selectedUser.assignedStreams ?? [];
-    const isAssigned = prevAssigned.includes(streamId);
-    const newAssigned = isAssigned
+    const newAssigned = prevAssigned.includes(streamId)
       ? prevAssigned.filter(id => id !== streamId)
       : [...prevAssigned, streamId];
     onAssign(selectedUser.id, newAssigned);
@@ -81,67 +70,38 @@ const UsersTab: React.FC<Props> = ({ users, streams, selectedUserId = null, onSe
   };
 
   const renderPagination = () => {
-    const pages: (React.ReactNode)[] = [];
+    const pages: React.ReactNode[] = [];
     const maxVisible = 5;
     let start = Math.max(1, currentPage - Math.floor(maxVisible / 2));
     let end = Math.min(totalPages, start + maxVisible - 1);
-    if (end - start + 1 < maxVisible) {
-      start = Math.max(1, end - maxVisible + 1);
-    }
+    if (end - start + 1 < maxVisible) start = Math.max(1, end - maxVisible + 1);
 
     pages.push(
-      <button
-        key="prev"
-        className={`${styles.navButton} ${currentPage === 1 ? styles.disabledNav : ''}`}
-        onClick={() => goToPage(currentPage - 1)}
-        disabled={currentPage === 1}
-      >
+      <button key="prev" className={`${styles.navButton} ${currentPage === 1 ? styles.disabledNav : ''}`} onClick={() => goToPage(currentPage - 1)} disabled={currentPage === 1}>
         ‹ Назад
       </button>
     );
 
     if (start > 1) {
-      pages.push(
-        <button key={1} className={styles.pageNumber} onClick={() => goToPage(1)}>
-          1
-        </button>
-      );
-      if (start > 2) {
-        pages.push(<span key="ellipsis1" className={styles.ellipsis}>…</span>);
-      }
+      pages.push(<button key={1} className={styles.pageNumber} onClick={() => goToPage(1)}>1</button>);
+      if (start > 2) pages.push(<span key="ellipsis1" className={styles.ellipsis}>…</span>);
     }
 
     for (let p = start; p <= end; p++) {
       pages.push(
-        <button
-          key={p}
-          className={`${styles.pageNumber} ${currentPage === p ? styles.activePage : ''}`}
-          onClick={() => goToPage(p)}
-          aria-current={currentPage === p ? 'page' : undefined}
-        >
+        <button key={p} className={`${styles.pageNumber} ${currentPage === p ? styles.activePage : ''}`} onClick={() => goToPage(p)} aria-current={currentPage === p ? 'page' : undefined}>
           {p}
         </button>
       );
     }
 
     if (end < totalPages) {
-      if (end < totalPages - 1) {
-        pages.push(<span key="ellipsis2" className={styles.ellipsis}>…</span>);
-      }
-      pages.push(
-        <button key={totalPages} className={styles.pageNumber} onClick={() => goToPage(totalPages)}>
-          {totalPages}
-        </button>
-      );
+      if (end < totalPages - 1) pages.push(<span key="ellipsis2" className={styles.ellipsis}>…</span>);
+      pages.push(<button key={totalPages} className={styles.pageNumber} onClick={() => goToPage(totalPages)}>{totalPages}</button>);
     }
 
     pages.push(
-      <button
-        key="next"
-        className={`${styles.navButton} ${currentPage === totalPages ? styles.disabledNav : ''}`}
-        onClick={() => goToPage(currentPage + 1)}
-        disabled={currentPage === totalPages}
-      >
+      <button key="next" className={`${styles.navButton} ${currentPage === totalPages ? styles.disabledNav : ''}`} onClick={() => goToPage(currentPage + 1)} disabled={currentPage === totalPages}>
         Дальше ›
       </button>
     );
@@ -156,14 +116,11 @@ const UsersTab: React.FC<Props> = ({ users, streams, selectedUserId = null, onSe
           {users.map(user => {
             const isActive = user.id === localSelected;
             return (
-              <div
-                key={user.id}
-                className={`${styles.userItem} ${isActive ? styles.userItemActive : ''}`}
-                onClick={() => handleSelectUser(user.id)}
-                role="button"
-                tabIndex={0}
-                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') handleSelectUser(user.id); }}
-              >
+              <div key={user.id} className={`${styles.userItem} ${isActive ? styles.userItemActive : ''}`}
+                   onClick={() => handleSelectUser(user.id)}
+                   role="button"
+                   tabIndex={0}
+                   onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') handleSelectUser(user.id); }}>
                 <span className={styles.userLogin}>{user.login}</span>
               </div>
             );
@@ -182,37 +139,21 @@ const UsersTab: React.FC<Props> = ({ users, streams, selectedUserId = null, onSe
                 <th className={styles.accessHeader}>Доступ</th>
               </tr>
             </thead>
-
             <tbody>
               {displayedStreams.map(stream => {
                 const assignedToUser = selectedUser?.assignedStreams?.includes(String(stream.id)) ?? false;
                 return (
                   <tr key={stream.id} className={styles.streamRow}>
-                    <td className={styles.rtspCell}>
-                      <div className={styles.rtspUrl}>{stream.url}</div>
-                    </td>
-
-                    <td className={styles.addressCell}>
-                      <div className={styles.cameraAddress}>{stream.description}</div>
-                    </td>
-
+                    <td className={styles.rtspCell}><div className={styles.rtspUrl}>{stream.url}</div></td>
+                    <td className={styles.addressCell}><div className={styles.cameraAddress}>{stream.description}</div></td>
                     <td className={styles.accessCell}>
-                      <input
-                        type="checkbox"
-                        checked={assignedToUser}
-                        onChange={() => handleToggleAccess(String(stream.id))}
-                        disabled={!selectedUser}
-                        aria-label={`Доступ к ${stream.description}`}
-                      />
+                      <input type="checkbox" checked={assignedToUser} onChange={() => handleToggleAccess(String(stream.id))} disabled={!selectedUser} aria-label={`Доступ к ${stream.description}`} />
                     </td>
                   </tr>
                 );
               })}
-
               {displayedStreams.length === 0 && (
-                <tr>
-                  <td colSpan={3} className={styles.emptyCell}>Видеопотоков нет</td>
-                </tr>
+                <tr><td colSpan={3} className={styles.emptyCell}>Видеопотоков нет</td></tr>
               )}
             </tbody>
           </table>
@@ -220,9 +161,7 @@ const UsersTab: React.FC<Props> = ({ users, streams, selectedUserId = null, onSe
 
         {totalPages > 1 && (
           <div className={styles.paginationWrap}>
-            <div className={styles.pagination}>
-              {renderPagination()}
-            </div>
+            <div className={styles.pagination}>{renderPagination()}</div>
           </div>
         )}
       </div>

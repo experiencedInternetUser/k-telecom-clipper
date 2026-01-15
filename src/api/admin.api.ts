@@ -29,24 +29,20 @@ export const adminApi = {
     return mapUserToAdminUser(data.user);
   },
 
+  // async updateUser(
+  //   id: number,
+  //   payload: Partial<UserForm>
+  // ): Promise<AdminUser> {
+  //   const { data } = await api.put<User>(
+  //     `/api/v1/admin/users/${id}`,
+  //     payload
+  //   );
+  //   return mapUserToAdminUser(data);
+  // },
 
-
-
-
-  async updateUser(
-    id: number,
-    payload: Partial<UserForm>
-  ): Promise<AdminUser> {
-    const { data } = await api.put<User>(
-      `/api/v1/admin/users/${id}`,
-      payload
-    );
-    return mapUserToAdminUser(data);
-  },
-
-  async deleteUser(id: number): Promise<void> {
-    await api.delete(`/api/v1/admin/users/${id}`);
-  },
+  // async deleteUser(id: number): Promise<void> {
+  //   await api.delete(`/api/v1/admin/users/${id}`);
+  // },
 
   /* ---------- STREAMS ---------- */
 

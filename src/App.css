@@ -23,7 +23,7 @@ html, body, #root {
   position: absolute;
   top: 24px;
   left: 24px;
-  z-index: 1000;
+  z-index: 0;
 }
 
 .logo {
@@ -38,6 +38,7 @@ html, body, #root {
   justify-content: center;
   align-items: center;
   padding: 48px;
+  z-index: 1;
 }
 
 @media (max-width: 768px) {

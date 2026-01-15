@@ -1,40 +1,29 @@
 import { useState, useEffect } from 'react';
 import styles from './DomofonList.module.css';
-import type { Domofon } from '../../types/Domofon';
+import type { Stream } from '../../types/Admin';
 import { useNavigate } from 'react-router-dom';
-import { adminApi } from '../../api/admin.api';
+import { streamsApi } from '../../api/streams.api';
 
 const ITEMS_PER_PAGE = 10;
 
 const DomofonList = () => {
-  const [domofons, setDomofons] = useState<Domofon[]>([]);
-  const [currentPage, setCurrentPage] = useState<number>(1);
-  const [totalPages, setTotalPages] = useState<number>(1);
+  const [streams, setStreams] = useState<Stream[]>([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
   const [isLoading, setIsLoading] = useState(true);
 
   const navigate = useNavigate();
 
-  /* ---------- LOAD STREAMS ---------- */
   useEffect(() => {
     const load = async () => {
       setIsLoading(true);
-
       try {
-        const streams = await adminApi.getStreams();
-
-
-        const mapped: Domofon[] = streams.map(stream => ({
-          id: stream.id,
-          title: stream.description || `Поток #${stream.id}`,
-          subtitle: stream.url,
-          stream,
-        }));
-
-        setDomofons(mapped);
-        setTotalPages(Math.max(1, Math.ceil(mapped.length / ITEMS_PER_PAGE)));
+        const data = await streamsApi.getAll();
+        setStreams(data);
+        setTotalPages(Math.max(1, Math.ceil(data.length / ITEMS_PER_PAGE)));
       } catch (e) {
-        console.error('Ошибка загрузки домофонов', e);
-        setDomofons([]);
+        console.error('Ошибка загрузки потоков', e);
+        setStreams([]);
         setTotalPages(1);
       } finally {
         setIsLoading(false);
@@ -44,14 +33,15 @@ const DomofonList = () => {
     load();
   }, []);
 
-  /* ---------- PAGINATION ---------- */
-  const paginated = domofons.slice(
+  const paginated = streams.slice(
     (currentPage - 1) * ITEMS_PER_PAGE,
     currentPage * ITEMS_PER_PAGE
   );
 
-  const handleSelect = (d: Domofon) => {
-    navigate('/video', { state: { domofon: d } });
+  const handleSelect = (s: Stream) => {
+    navigate('/video', {
+      state: { streamId: s.id }
+    });
   };
 
   const handlePageChange = (page: number) => {
@@ -60,69 +50,6 @@ const DomofonList = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  const renderPagination = () => {
-    const pages: (number | 'ellipsis')[] = [];
-    const maxVisible = 5;
-
-    let start = Math.max(1, currentPage - Math.floor(maxVisible / 2));
-    const end = Math.min(totalPages, start + maxVisible - 1);
-
-    if (end - start + 1 < maxVisible) {
-      start = Math.max(1, end - maxVisible + 1);
-    }
-
-    if (start > 1) {
-      pages.push(1);
-      if (start > 2) pages.push('ellipsis');
-    }
-
-    for (let i = start; i <= end; i++) pages.push(i);
-
-    if (end < totalPages) {
-      if (end < totalPages - 1) pages.push('ellipsis');
-      pages.push(totalPages);
-    }
-
-    return (
-      <div className={styles.pagination}>
-        <button
-          className={styles.navButton}
-          onClick={() => handlePageChange(currentPage - 1)}
-          disabled={currentPage === 1}
-        >
-          ‹ Назад
-        </button>
-
-        <div className={styles.pages}>
-          {pages.map((p, idx) =>
-            p === 'ellipsis' ? (
-              <span key={`e-${idx}`} className={styles.ellipsis}>…</span>
-            ) : (
-              <button
-                key={p}
-                className={`${styles.pageNumber} ${
-                  currentPage === p ? styles.activePage : ''
-                }`}
-                onClick={() => handlePageChange(p)}
-              >
-                {p}
-              </button>
-            )
-          )}
-        </div>
-
-        <button
-          className={styles.navButton}
-          onClick={() => handlePageChange(currentPage + 1)}
-          disabled={currentPage === totalPages}
-        >
-          Дальше ›
-        </button>
-      </div>
-    );
-  };
-
-  /* ---------- RENDER ---------- */
   if (isLoading) {
     return (
       <div className={styles.container}>
@@ -137,18 +64,19 @@ const DomofonList = () => {
         <h1>Видеопотоки</h1>
       </div>
 
-      <ul className={styles.list} role="list">
-        {paginated.map(d => (
+      <ul className={styles.list}>
+        {paginated.map(stream => (
           <li
-            key={d.id}
+            key={stream.id}
             className={styles.item}
-            onClick={() => handleSelect(d)}
-            role="button"
+            onClick={() => handleSelect(stream)}
             tabIndex={0}
-            onKeyDown={e => e.key === 'Enter' && handleSelect(d)}
+            role="button"
+            onKeyDown={e => e.key === 'Enter' && handleSelect(stream)}
           >
-            <div className={styles.title}>{d.title}</div>
-            {/* <div className={styles.subtitle}>{d.subtitle}</div> */}
+            <div className={styles.title}>
+              {stream.description || `Поток #${stream.id}`}
+            </div>
             <div className={styles.separator} />
           </li>
         ))}
@@ -158,7 +86,27 @@ const DomofonList = () => {
         )}
       </ul>
 
-      {totalPages > 1 && renderPagination()}
+      {totalPages > 1 && (
+        <div className={styles.pagination}>
+          <button
+            onClick={() => handlePageChange(currentPage - 1)}
+            disabled={currentPage === 1}
+          >
+            ‹ Назад
+          </button>
+
+          <span>
+            {currentPage} / {totalPages}
+          </span>
+
+          <button
+            onClick={() => handlePageChange(currentPage + 1)}
+            disabled={currentPage === totalPages}
+          >
+            Дальше ›
+          </button>
+        </div>
+      )}
     </div>
   );
 };

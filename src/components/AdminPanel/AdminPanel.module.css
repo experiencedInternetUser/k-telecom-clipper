@@ -12,8 +12,6 @@
   gap: 12px;
 }
 
-.header { }
-
 .headerContent {
   display: flex;
   justify-content: space-between;

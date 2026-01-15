@@ -268,8 +268,8 @@ const AdminPanel = () => {
               </button>
             </div>
             <div className={styles.controlsRight}>
-              <button className={styles.editUserButton} onClick={() => {}}>Редактировать</button>
-              <button className={styles.deleteUserButton} onClick={() => {}}>Удалить</button>
+              {/* <button className={styles.editUserButton} onClick={() => {}}>Редактировать</button>
+              <button className={styles.deleteUserButton} onClick={() => {}}>Удалить</button> */}
             </div>
           </div>
 

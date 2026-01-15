@@ -1,14 +1,14 @@
 import { useEffect, useMemo, useState } from "react";
 import styles from "./AdminPanel.module.css";
 
-import type { Stream, AdminUser } from "../../types/Admin";
+import type { Stream, AdminUser, NewStreamForm } from "../../types/Admin";
 import StreamsTab from "./StreamsTab";
 import UsersTab from "./UsersTab";
 import StreamModal from "./StreamModal";
 import DeleteModal from "./DeleteModal";
 import SearchBar from "./SearchBar";
 
-import { adminApi } from "../../api/admin.api";
+import { adminApi, createPermission, deletePermission, getPermissionsForStream } from "../../api/admin.api";
 
 const ITEMS_PER_PAGE = 10;
 
@@ -82,57 +82,103 @@ const AdminPanel = () => {
   };
 
   /* ---------- STREAM CRUD ---------- */
-  const handleCreateStream = async (payload: {
-    url: string;
-    description: string;
-    userIds: number[];
-  }) => {
-    const stream = await adminApi.createStream({
-      url: payload.url,
-      description: payload.description,
-    });
+  // const handleCreateStream = async (payload: {
+  //   url: string;
+  //   description: string;
+  //   userIds: number[];
+  // }) => {
+  //   const stream = await adminApi.createStream({
+  //     url: payload.url,
+  //     description: payload.description,
+  //   });
 
-    for (const userId of payload.userIds) {
-      await adminApi.createPermission({
-        user_id: userId,
-        stream_id: stream.id,
-        can_read: true,
-        can_update: true,
-      });
-    }
+  //   for (const userId of payload.userIds) {
+  //     await adminApi.createPermission({
+  //       user_id: userId,
+  //       stream_id: stream.id,
+  //       can_read: true,
+  //       can_update: true,
+  //     });
+  //   }
 
-    setStreams((prev) => [stream, ...prev]);
-    setStreamModalOpen(false);
-  };
+  //   setStreams((prev) => [stream, ...prev]);
+  //   setStreamModalOpen(false);
+  // };
 
-  const handleUpdateStream = async (
-    id: number,
-    payload: {
-      url: string;
-      description: string;
-      userIds: number[];
-    }
-  ) => {
-    const updated = await adminApi.updateStream(id, {
-      url: payload.url,
-      description: payload.description,
-    });
+const handleCreateStream = async (data: NewStreamForm) => {
+  const stream = await adminApi.createStream({
+    url: data.url,
+    description: data.description,
+  });
 
-    await adminApi.deletePermissionsForStream(id);
+  const users = Array.isArray(data.selectedUsers)
+    ? data.selectedUsers
+    : [];
 
-    for (const userId of payload.userIds) {
-      await adminApi.createPermission({
-        user_id: userId,
-        stream_id: id,
-        can_read: true,
-        can_update: true,
-      });
-    }
+  if (users.length > 0) {
+    await Promise.all(
+      users.map((userId) =>
+        createPermission({
+          user_id: userId,
+          stream_id: stream.id,
+        })
+      )
+    );
+  }
 
-    setStreams((prev) => prev.map((s) => (s.id === id ? updated : s)));
-    setEditingStream(null);
-    setStreamModalOpen(false);
-  };
+  setStreams((prev) => [stream, ...prev]);
+  setStreamModalOpen(false);
+};
+
+
+const handleUpdateStream = async (
+  streamId: number,
+  data: { url: string; description: string; userIds: number[] }
+) => {
+  // 1. обновляем поток на сервере
+  const updatedStream = await adminApi.updateStream(streamId, {
+    url: data.url,
+    description: data.description,
+  });
+
+  const nextUserIds = Array.isArray(data.userIds) ? data.userIds : [];
+
+  // 2. получаем текущие permissions
+  const { data: permissions } = await getPermissionsForStream(streamId);
+
+  // 3. удаляем старые permissions
+  if (Array.isArray(permissions) && permissions.length > 0) {
+    await Promise.all(
+      permissions.map((p: any) => deletePermission(p.id))
+    );
+  }
+
+  // 4. создаём новые permissions
+  if (nextUserIds.length > 0) {
+    await Promise.all(
+      nextUserIds.map((userId) =>
+        createPermission({
+          user_id: userId,
+          stream_id: streamId,
+        })
+      )
+    );
+  }
+
+  // ✅ 5. ОБНОВЛЯЕМ STREAMS В STATE
+  setStreams((prev) =>
+    prev.map((s) => (s.id === streamId ? updatedStream : s))
+  );
+
+  setStreamModalOpen(false);
+  setEditingStream(null);
+};
+
+
+
+
+
+
 
   const handleDeleteStream = async (id: number) => {
     await adminApi.deleteStream(id);

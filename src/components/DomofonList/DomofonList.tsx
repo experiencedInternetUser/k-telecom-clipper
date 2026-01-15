@@ -22,6 +22,7 @@ const DomofonList = () => {
       try {
         const streams = await adminApi.getStreams();
 
+
         const mapped: Domofon[] = streams.map(stream => ({
           id: stream.id,
           title: stream.description || `Поток #${stream.id}`,

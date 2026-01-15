@@ -93,3 +93,17 @@ export const adminApi = {
     await api.delete(`/api/v1/admin/permissions/stream/${streamId}`);
   },
 };
+
+export const getPermissionsForStream = (streamId: number) =>
+  api.get(`/api/v1/admin/permissions`, {
+    params: { stream_id: streamId },
+  });
+
+export const deletePermission = (permissionId: number) =>
+  api.delete(`/api/v1/admin/permissions/${permissionId}`);
+
+export const createPermission = (payload: {
+  user_id: number;
+  stream_id: number;
+}) =>
+  api.post(`/api/v1/admin/permissions`, payload);

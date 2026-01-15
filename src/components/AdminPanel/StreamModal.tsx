@@ -38,13 +38,13 @@ const StreamModal = ({ stream, users, onClose, onSubmit }: Props) => {
 
   return (
     <>
-      <div className={styles.overlay}>
+      <div className={styles.modalOverlay}>
         <div className={styles.modal}>
-          <h2>{stream ? "Редактировать поток" : "Создать поток"}</h2>
+          <h2 style={{paddingBottom: '10px'}}>{stream ? "Редактировать поток" : "Создать поток"}</h2>
 
           <form onSubmit={handleSubmit}>
-            <label>
-              URL потока
+            <label >
+              <div style={{paddingBottom: '10px'}}>URL потока</div>
               <input
                 value={url}
                 onChange={(e) => setUrl(e.target.value)}
@@ -53,7 +53,7 @@ const StreamModal = ({ stream, users, onClose, onSubmit }: Props) => {
             </label>
 
             <label>
-              Описание
+              <div style={{paddingBottom: '10px'}}>Адрес камеры</div>
               <input
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
@@ -61,6 +61,7 @@ const StreamModal = ({ stream, users, onClose, onSubmit }: Props) => {
             </label>
 
             <button
+              style={{width: '100%'}}
               type="button"
               className={styles.accessButton}
               onClick={() => setUsersModalOpen(true)}
@@ -69,11 +70,11 @@ const StreamModal = ({ stream, users, onClose, onSubmit }: Props) => {
             </button>
 
             <div className={styles.actions}>
-              <button type="submit" className={styles.save}>
-                Сохранить
-              </button>
               <button type="button" onClick={onClose}>
                 Отмена
+              </button>
+              <button type="submit" className={styles.submitButton}>
+                Сохранить
               </button>
             </div>
           </form>
@@ -82,11 +83,12 @@ const StreamModal = ({ stream, users, onClose, onSubmit }: Props) => {
 
       {isUsersModalOpen && (
         <UsersAccessModal
+          title="Пользователи с доступом"
           allUsers={users}
-          selected={selectedUserIds}
+          userIds={selectedUserIds.map(String)}
           onClose={() => setUsersModalOpen(false)}
-          onConfirm={(ids: number[]) => {
-            setSelectedUserIds(ids);
+          onApply={(ids: string[]) => {
+            setSelectedUserIds(ids.map(Number));
             setUsersModalOpen(false);
           }}
         />

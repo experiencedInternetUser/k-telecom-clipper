@@ -1,17 +1,17 @@
 import React, { useState } from 'react';
 import styles from './UsersAccessModal.module.css';
-import type { User } from '../../types/Admin';
+import type { AdminUser } from '../../types/Admin';
 
 interface Props {
   title: string;
   address?: string;
   userIds: string[];
-  allUsers: User[];
+  allUsers: AdminUser[];
   onClose: () => void;
   onApply: (selected: string[]) => void;
 }
 
-const UsersAccessModal: React.FC<Props> = ({ title, address, userIds, allUsers, onClose, onApply }) => {
+const UsersAccessModal: React.FC<Props> = ({ title, userIds, allUsers, onClose, onApply }) => {
   const [selected, setSelected] = useState<string[]>(userIds || []);
 
   const toggle = (id: string) => {

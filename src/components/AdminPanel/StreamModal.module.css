@@ -38,3 +38,9 @@
 .modalActions { display:flex; justify-content:flex-end; gap:10px; margin-top:10px; }
 .cancelButton { background:#fff; border:1px solid #E6E9EE; padding:8px 12px; border-radius:8px; color:#6b7280; font-weight:700; }
 .submitButton { background:#C8235A; color:#F8FAFC; border:none; padding:8px 12px; border-radius:8px; font-weight:700; }
+
+.actions {
+  padding-top: 20px;
+  display: flex;
+  justify-content: space-between;
+}

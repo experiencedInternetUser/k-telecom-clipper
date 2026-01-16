@@ -2,8 +2,9 @@ import axios from "axios";
 import type { AxiosError } from "axios";
 
 export const api = axios.create({
-  // baseURL: import.meta.env.VITE_API_URL,
-  baseURL: '',
+  // In development, use empty baseURL to leverage Vite proxy
+  // In production, use the full API URL from environment variable
+  baseURL: import.meta.env.PROD ? import.meta.env.VITE_API_URL || '' : '',
   headers: {
     "Content-Type": "application/json",
   },
@@ -49,8 +50,13 @@ api.interceptors.response.use(
         return Promise.reject(error);
       }
 
+      // Use proxy in dev, direct URL in production
+      const refreshUrl = import.meta.env.PROD 
+        ? `${import.meta.env.VITE_API_URL}/api/v1/users/refresh`
+        : '/api/v1/users/refresh';
+      
       const response = await axios.post(
-        `${import.meta.env.VITE_API_URL}/api/v1/users/refresh`,
+        refreshUrl,
         { refresh_token: refreshToken }
       );
 

@@ -1,0 +1,33 @@
+version: "3.9"
+
+services:
+  admin-frontend:
+    image: k-telecom-clipper:${VERSION:-latest}
+    build:
+      context: .
+      dockerfile: Dockerfile.prod
+      args:
+        VITE_API_URL: ${VITE_API_URL:-http://155.212.146.240:5000}
+      cache_from:
+        - k-telecom-clipper:latest
+    ports:
+      - "80:80"
+    restart: unless-stopped
+    env_file:
+      - .env
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:80/"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 5s
+    security_opt:
+      - no-new-privileges:true
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 2G
+        reservations:
+          cpus: '0.25'
+          memory: 128M

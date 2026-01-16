@@ -30,6 +30,7 @@ const VideoStreamPage = () => {
 
   const [streamUrl, setStreamUrl] = useState<string | null>(null);
   const [loadingStream, setLoadingStream] = useState(true);
+  const [snapshotKey, setSnapshotKey] = useState<number>(Date.now()); // для принудительного обновления снимка
 
   const [polygon, setPolygon] = useState<Point[]>([]);
   const [redoStack, setRedoStack] = useState<Point[]>([]);
@@ -98,6 +99,17 @@ const VideoStreamPage = () => {
 
     loadSelections();
   }, [streamId]);
+
+  /* ---------- SNAPSHOT REFRESH INTERVAL ---------- */
+  useEffect(() => {
+    if (!streamUrl) return;
+
+    const interval = setInterval(() => {
+      setSnapshotKey(Date.now());
+    }, 2000);
+
+    return () => clearInterval(interval);
+  }, [streamUrl]);
 
   /* ---------- CANVAS SIZE / RESIZE OBSERVER ---------- */
   useEffect(() => {
@@ -361,7 +373,11 @@ const VideoStreamPage = () => {
           style={!streamUrl ? { backgroundColor: '#f1f5f9' } : undefined}
         >
           {streamUrl ? (
-            <video src={streamUrl} autoPlay muted playsInline className={styles.video} />
+            <img
+              src={`${streamUrl}${streamUrl.includes('?') ? '&' : '?'}_t=${snapshotKey}`}
+              alt="Снимок камеры"
+              className={styles.video}
+            />
           ) : (
             <div
               style={{

@@ -311,6 +311,36 @@
   box-shadow: 0 0 0 2px rgba(200, 35, 90, 0.3);
 }
 
+.selectionSelectWrapper {
+  position: relative;
+  display: inline-block;
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.selectionSelect {
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  background-color: #fff;
+  color: #3B82F6;
+  padding: 0.5rem 2rem 0.5rem 0.75rem;
+  font-size: 0.9rem;
+  font-weight: 500;
+  border: 1px solid #3B82F6;
+  cursor: pointer;
+  min-width: 180px;
+  border-radius: 6px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%233B82F6' d='M2 4l4 4 4-4'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.75rem center;
+}
+
+.selectionSelect:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.3);
+}
+
 .videoPlaceholder {
   position: relative;
   width: 100%;
@@ -324,12 +354,10 @@
 }
 
 .videoPlaceholder video,
-.videoPlaceholder img,
 .videoPlaceholder .video {
   position: relative;
   z-index: 1;
   width: 100%;
   height: 100%;
-  object-fit: contain;
-  background: #0f1724;
+  object-fit: cover;
 }

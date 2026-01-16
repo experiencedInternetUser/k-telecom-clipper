@@ -40,7 +40,7 @@ const VideoStreamPage = () => {
 
   const [existingSelections, setExistingSelections] = useState<Selection[]>([]);
   const [loadingSelections, setLoadingSelections] = useState(true);
-  const [streamError, setStreamError] = useState(false);
+  const [selectedExistingId, setSelectedExistingId] = useState<number | null>(null); // null = новое выделение
 
   /* ---------- LOAD STREAM ---------- */
   useEffect(() => {
@@ -189,26 +189,29 @@ const VideoStreamPage = () => {
 
     ctx.clearRect(0, 0, cssW, cssH);
 
-    // Рисуем существующие выделения (синие)
+    // Рисуем существующие выделения
     for (const sel of existingSelections) {
+      const isSelected = sel.id === selectedExistingId;
       drawSinglePolygon(
         ctx,
         sel.selection,
-        EXISTING_SELECTION_COLOR,
-        'rgba(59, 130, 246, 0.15)',
-        false // не показываем точки для существующих выделений
+        isSelected ? NEW_SELECTION_COLOR : EXISTING_SELECTION_COLOR,
+        isSelected ? 'rgba(200, 35, 90, 0.15)' : 'rgba(59, 130, 246, 0.15)',
+        isSelected // показываем точки только для выбранного выделения
       );
     }
 
-    // Рисуем текущее выделение пользователя (розовое)
-    drawSinglePolygon(
-      ctx,
-      polygon,
-      NEW_SELECTION_COLOR,
-      'rgba(200, 35, 90, 0.15)',
-      true
-    );
-  }, [polygon, existingSelections]);
+    // Рисуем текущее выделение пользователя (розовое) только если создаём новое
+    if (selectedExistingId === null) {
+      drawSinglePolygon(
+        ctx,
+        polygon,
+        NEW_SELECTION_COLOR,
+        'rgba(200, 35, 90, 0.15)',
+        true
+      );
+    }
+  }, [polygon, existingSelections, selectedExistingId]);
 
   useEffect(() => {
     drawPolygon();
@@ -216,6 +219,9 @@ const VideoStreamPage = () => {
 
   /* ---------- HANDLERS ---------- */
   const handleCanvasClick = (e: React.MouseEvent<HTMLCanvasElement>) => {
+    // Не позволяем рисовать при просмотре существующего выделения
+    if (selectedExistingId !== null) return;
+
     const canvas = canvasRef.current;
     if (!canvas) return;
     const rect = canvas.getBoundingClientRect();
@@ -289,9 +295,9 @@ const VideoStreamPage = () => {
     navigate(-1);
   };
 
-  const undoEnabled = polygon.length > 0;
-  const redoEnabled = redoStack.length > 0;
-  const saveEnabled = polygon.length >= 3 && selectedBackendId !== null;
+  const undoEnabled = polygon.length > 0 && selectedExistingId === null;
+  const redoEnabled = redoStack.length > 0 && selectedExistingId === null;
+  const saveEnabled = polygon.length >= 3 && selectedBackendId !== null && selectedExistingId === null;
 
   if (loadingStream || loadingSelections) {
     return <div className={styles.container}>Загрузка…</div>;
@@ -305,15 +311,44 @@ const VideoStreamPage = () => {
 
       <div className={styles.instructions}>
         <div className={styles.instructionsText}>
-          <p className={styles.instructionPrimary}>Выделите нужную область</p>
-          <p className={styles.instructionSecondary}>Создайте многоугольник из трёх или более точек</p>
+          <p className={styles.instructionPrimary}>
+            {selectedExistingId === null ? 'Выделите нужную область' : 'Просмотр существующего выделения'}
+          </p>
+          <p className={styles.instructionSecondary}>
+            {selectedExistingId === null
+              ? 'Создайте многоугольник из трёх или более точек'
+              : `Выделение #${selectedExistingId}`}
+          </p>
         </div>
 
         <div className={styles.instrButtons}>
-          <button className={styles.iconButton} onClick={handleUndo} disabled={!undoEnabled}>
+          <div className={styles.selectionSelectWrapper}>
+            <select
+              value={selectedExistingId ?? 'new'}
+              onChange={e => {
+                const val = e.target.value;
+                if (val === 'new') {
+                  setSelectedExistingId(null);
+                } else {
+                  setSelectedExistingId(Number(val));
+                  setPolygon([]);
+                  setRedoStack([]);
+                }
+              }}
+              className={styles.selectionSelect}
+            >
+              <option value="new">+ Новое выделение</option>
+              {existingSelections.map((sel, idx) => (
+                <option key={sel.id} value={sel.id}>
+                  Выделение #{idx + 1} ({sel.backend.description})
+                </option>
+              ))}
+            </select>
+          </div>
+          <button className={styles.iconButton} onClick={handleUndo} disabled={!undoEnabled || selectedExistingId !== null}>
             <img src={undoIcon} alt="undo" className={styles.iconImage} />
           </button>
-          <button className={styles.iconButton} onClick={handleRedo} disabled={!redoEnabled}>
+          <button className={styles.iconButton} onClick={handleRedo} disabled={!redoEnabled || selectedExistingId !== null}>
             <img src={redoIcon} alt="redo" className={styles.iconImage} />
           </button>
         </div>
@@ -323,17 +358,10 @@ const VideoStreamPage = () => {
         <div
           ref={videoRef}
           className={styles.videoPlaceholder}
-          style={!streamUrl || streamError ? { backgroundColor: '#f1f5f9' } : undefined}
+          style={!streamUrl ? { backgroundColor: '#f1f5f9' } : undefined}
         >
-          {streamUrl && !streamError ? (
-            // Используем img для MJPEG/RTSP потоков - браузеры не поддерживают rtsp:// напрямую,
-            // но серверы часто отдают MJPEG поток по HTTP который img может отображать
-            <img
-              src={streamUrl}
-              alt="Видеопоток"
-              className={styles.video}
-              onError={() => setStreamError(true)}
-            />
+          {streamUrl ? (
+            <video src={streamUrl} autoPlay muted playsInline className={styles.video} />
           ) : (
             <div
               style={{
@@ -348,19 +376,9 @@ const VideoStreamPage = () => {
                 padding: '1rem',
               }}
             >
-              {streamError ? (
-                <>
-                  Не удалось загрузить видеопоток.
-                  <br />
-                  Проверьте доступность камеры или обратитесь к администратору
-                </>
-              ) : (
-                <>
-                  Ошибка загрузки видеопотока.
-                  <br />
-                  Обратитесь к администратору
-                </>
-              )}
+              Ошибка загрузки видеопотока.
+              <br />
+              Обратитесь к администратору
             </div>
           )}
 

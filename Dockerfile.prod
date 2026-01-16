@@ -9,7 +9,7 @@ COPY package*.json ./
 RUN npm i && \
     npm cache clean --force
   
-RUN npm i tsc
+RUN npm i typescript
 
 COPY . .
 

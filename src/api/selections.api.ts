@@ -1,5 +1,5 @@
 import { api } from './axios';
-import type { Point } from '../types/VideoStream';
+import type { Point, Selection } from '../types/VideoStream';
 
 export const selectionsApi = {
   async create(streamId: number, points: Point[]) {
@@ -7,5 +7,10 @@ export const selectionsApi = {
       stream_id: streamId,
       points,
     });
+  },
+
+  async getByStreamId(streamId: number): Promise<Selection[]> {
+    const res = await api.get<Selection[]>(`/api/v1/streams/${streamId}/selections`);
+    return res.data;
   },
 };

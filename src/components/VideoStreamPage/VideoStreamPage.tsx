@@ -1,10 +1,11 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import styles from './VideoStreamPage.module.css';
-import type { Point } from '../../types/VideoStream';
+import type { Point, Selection } from '../../types/VideoStream';
 import undoIcon from '../../assets/undo.svg';
 import redoIcon from '../../assets/redo.svg';
 import { api } from '../../api/axios';
+import { selectionsApi } from '../../api/selections.api';
 
 interface Backend {
   id: number;
@@ -13,6 +14,8 @@ interface Backend {
 
 const LINE_WIDTH = 1.2;   // толщина линии в CSS-пикселях
 const POINT_RADIUS = 3.0; // радиус точки в CSS-пикселях
+const EXISTING_SELECTION_COLOR = '#3B82F6'; // синий для существующих выделений
+const NEW_SELECTION_COLOR = '#C8235A'; // розовый для нового выделения
 
 const VideoStreamPage = () => {
   const navigate = useNavigate();
@@ -27,6 +30,7 @@ const VideoStreamPage = () => {
 
   const [streamUrl, setStreamUrl] = useState<string | null>(null);
   const [loadingStream, setLoadingStream] = useState(true);
+  const [snapshotKey, setSnapshotKey] = useState<number>(Date.now()); // для принудительного обновления снимка
 
   const [polygon, setPolygon] = useState<Point[]>([]);
   const [redoStack, setRedoStack] = useState<Point[]>([]);
@@ -34,6 +38,10 @@ const VideoStreamPage = () => {
 
   const [backends, setBackends] = useState<Backend[]>([]);
   const [selectedBackendId, setSelectedBackendId] = useState<number | null>(null);
+
+  const [existingSelections, setExistingSelections] = useState<Selection[]>([]);
+  const [loadingSelections, setLoadingSelections] = useState(true);
+  const [selectedExistingId, setSelectedExistingId] = useState<number | null>(null); // null = новое выделение
 
   /* ---------- LOAD STREAM ---------- */
   useEffect(() => {
@@ -70,6 +78,38 @@ const VideoStreamPage = () => {
     };
     loadBackends();
   }, []);
+
+  /* ---------- LOAD EXISTING SELECTIONS ---------- */
+  useEffect(() => {
+    if (!streamId) {
+      setLoadingSelections(false);
+      return;
+    }
+
+    const loadSelections = async () => {
+      try {
+        const selections = await selectionsApi.getByStreamId(streamId);
+        setExistingSelections(selections);
+      } catch (e) {
+        console.error('Ошибка загрузки существующих выделений', e);
+      } finally {
+        setLoadingSelections(false);
+      }
+    };
+
+    loadSelections();
+  }, [streamId]);
+
+  /* ---------- SNAPSHOT REFRESH INTERVAL ---------- */
+  useEffect(() => {
+    if (!streamUrl) return;
+
+    const interval = setInterval(() => {
+      setSnapshotKey(Date.now());
+    }, 2000);
+
+    return () => clearInterval(interval);
+  }, [streamUrl]);
 
   /* ---------- CANVAS SIZE / RESIZE OBSERVER ---------- */
   useEffect(() => {
@@ -109,8 +149,47 @@ const VideoStreamPage = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [videoRef.current, canvasRef.current]);
 
-  /* ---------- DRAW POLYGON FUNCTION ---------- */
-  const drawPolygon = () => {
+  /* ---------- DRAW SINGLE POLYGON HELPER ---------- */
+  const drawSinglePolygon = (
+    ctx: CanvasRenderingContext2D,
+    points: Point[],
+    strokeColor: string,
+    fillColor: string,
+    showPoints: boolean = true
+  ) => {
+    if (points.length === 0) return;
+
+    ctx.save();
+    ctx.lineJoin = 'round';
+    ctx.lineCap = 'round';
+    ctx.strokeStyle = strokeColor;
+    ctx.lineWidth = LINE_WIDTH;
+    ctx.fillStyle = fillColor;
+
+    ctx.beginPath();
+    ctx.moveTo(points[0].x, points[0].y);
+    for (let i = 1; i < points.length; i++) ctx.lineTo(points[i].x, points[i].y);
+
+    if (points.length >= 3) {
+      ctx.closePath();
+      ctx.fill();
+    }
+    ctx.stroke();
+
+    if (showPoints) {
+      for (const p of points) {
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, POINT_RADIUS, 0, Math.PI * 2);
+        ctx.fillStyle = strokeColor;
+        ctx.fill();
+      }
+    }
+
+    ctx.restore();
+  };
+
+  /* ---------- DRAW ALL POLYGONS FUNCTION ---------- */
+  const drawPolygon = useCallback(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
@@ -122,42 +201,39 @@ const VideoStreamPage = () => {
 
     ctx.clearRect(0, 0, cssW, cssH);
 
-    if (polygon.length === 0) return;
-
-    ctx.save();
-    ctx.lineJoin = 'round';
-    ctx.lineCap = 'round';
-    ctx.strokeStyle = '#C8235A';
-    ctx.lineWidth = LINE_WIDTH;
-    ctx.fillStyle = 'rgba(200, 35, 90, 0.15)';
-
-    ctx.beginPath();
-    ctx.moveTo(polygon[0].x, polygon[0].y);
-    for (let i = 1; i < polygon.length; i++) ctx.lineTo(polygon[i].x, polygon[i].y);
-
-    if (polygon.length >= 3) {
-      ctx.closePath();
-      ctx.fill();
-    }
-    ctx.stroke();
-
-    for (const p of polygon) {
-      ctx.beginPath();
-      ctx.arc(p.x, p.y, POINT_RADIUS, 0, Math.PI * 2);
-      ctx.fillStyle = '#C8235A';
-      ctx.fill();
+    // Рисуем существующие выделения
+    for (const sel of existingSelections) {
+      const isSelected = sel.id === selectedExistingId;
+      drawSinglePolygon(
+        ctx,
+        sel.selection,
+        isSelected ? NEW_SELECTION_COLOR : EXISTING_SELECTION_COLOR,
+        isSelected ? 'rgba(200, 35, 90, 0.15)' : 'rgba(59, 130, 246, 0.15)',
+        isSelected // показываем точки только для выбранного выделения
+      );
     }
 
-    ctx.restore();
-  };
+    // Рисуем текущее выделение пользователя (розовое) только если создаём новое
+    if (selectedExistingId === null) {
+      drawSinglePolygon(
+        ctx,
+        polygon,
+        NEW_SELECTION_COLOR,
+        'rgba(200, 35, 90, 0.15)',
+        true
+      );
+    }
+  }, [polygon, existingSelections, selectedExistingId]);
 
   useEffect(() => {
     drawPolygon();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [polygon]);
+  }, [drawPolygon]);
 
   /* ---------- HANDLERS ---------- */
   const handleCanvasClick = (e: React.MouseEvent<HTMLCanvasElement>) => {
+    // Не позволяем рисовать при просмотре существующего выделения
+    if (selectedExistingId !== null) return;
+
     const canvas = canvasRef.current;
     if (!canvas) return;
     const rect = canvas.getBoundingClientRect();
@@ -213,6 +289,10 @@ const VideoStreamPage = () => {
 
       setPolygon([]);
       setRedoStack([]);
+
+      // Перезагружаем существующие выделения чтобы отобразить только что сохранённое
+      const selections = await selectionsApi.getByStreamId(streamId);
+      setExistingSelections(selections);
     } catch (err) {
       console.error('Ошибка при сохранении выделения', err);
       const msg = (err as any)?.response?.data?.message ?? 'Ошибка при сохранении на сервере';
@@ -227,12 +307,12 @@ const VideoStreamPage = () => {
     navigate(-1);
   };
 
-  const undoEnabled = polygon.length > 0;
-  const redoEnabled = redoStack.length > 0;
-  const saveEnabled = polygon.length >= 3 && selectedBackendId !== null;
+  const undoEnabled = polygon.length > 0 && selectedExistingId === null;
+  const redoEnabled = redoStack.length > 0 && selectedExistingId === null;
+  const saveEnabled = polygon.length >= 3 && selectedBackendId !== null && selectedExistingId === null;
 
-  if (loadingStream) {
-    return <div className={styles.container}>Загрузка стрима…</div>;
+  if (loadingStream || loadingSelections) {
+    return <div className={styles.container}>Загрузка…</div>;
   }
 
   return (
@@ -243,15 +323,44 @@ const VideoStreamPage = () => {
 
       <div className={styles.instructions}>
         <div className={styles.instructionsText}>
-          <p className={styles.instructionPrimary}>Выделите нужную область</p>
-          <p className={styles.instructionSecondary}>Создайте многоугольник из трёх или более точек</p>
+          <p className={styles.instructionPrimary}>
+            {selectedExistingId === null ? 'Выделите нужную область' : 'Просмотр существующего выделения'}
+          </p>
+          <p className={styles.instructionSecondary}>
+            {selectedExistingId === null
+              ? 'Создайте многоугольник из трёх или более точек'
+              : `Выделение #${selectedExistingId}`}
+          </p>
         </div>
 
         <div className={styles.instrButtons}>
-          <button className={styles.iconButton} onClick={handleUndo} disabled={!undoEnabled}>
+          <div className={styles.selectionSelectWrapper}>
+            <select
+              value={selectedExistingId ?? 'new'}
+              onChange={e => {
+                const val = e.target.value;
+                if (val === 'new') {
+                  setSelectedExistingId(null);
+                } else {
+                  setSelectedExistingId(Number(val));
+                  setPolygon([]);
+                  setRedoStack([]);
+                }
+              }}
+              className={styles.selectionSelect}
+            >
+              <option value="new">+ Новое выделение</option>
+              {existingSelections.map((sel, idx) => (
+                <option key={sel.id} value={sel.id}>
+                  Выделение #{idx + 1} ({sel.backend.description})
+                </option>
+              ))}
+            </select>
+          </div>
+          <button className={styles.iconButton} onClick={handleUndo} disabled={!undoEnabled || selectedExistingId !== null}>
             <img src={undoIcon} alt="undo" className={styles.iconImage} />
           </button>
-          <button className={styles.iconButton} onClick={handleRedo} disabled={!redoEnabled}>
+          <button className={styles.iconButton} onClick={handleRedo} disabled={!redoEnabled || selectedExistingId !== null}>
             <img src={redoIcon} alt="redo" className={styles.iconImage} />
           </button>
         </div>
@@ -264,7 +373,11 @@ const VideoStreamPage = () => {
           style={!streamUrl ? { backgroundColor: '#f1f5f9' } : undefined}
         >
           {streamUrl ? (
-            <video src={streamUrl} autoPlay muted playsInline className={styles.video} />
+            <img
+              src={`${streamUrl}${streamUrl.includes('?') ? '&' : '?'}_t=${snapshotKey}`}
+              alt="Снимок камеры"
+              className={styles.video}
+            />
           ) : (
             <div
               style={{
